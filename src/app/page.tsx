@@ -18,14 +18,22 @@ export default function Home() {
 
   const [highlightedNodes, setHighlightedNodes] = useState<string[]>([]);
   const [selectedNode, setSelectedNode] = useState<string>(nodes[0]); 
+  //log traversal and record in side block
+  const [fullLog, setFullLog] = useState<string>('');
+  const [selectedAlgo, setSelectedAlgo] = useState<keyof typeof algorithmMap>("");
+
+  const [nodeAnnotations, setNodeAnnotations] = useState<Record<string, string>>({});
 
   //memoize nodes and edges to avoid unnecessary rerenders
   const memoizedNodes = useMemo(() => nodes.map(id => ({ id })), [nodes]);
-  const memoizedEdges = useMemo(
-    () => edges.map(({ node1, node2, weight }) => ({ source: node1, target: node2, weight })),
-    [edges]
-  );
-
+  const memoizedEdges = useMemo(() => {
+    const nodeMap = new Map(memoizedNodes.map(n => [n.id, n]));
+    return edges.map(({ node1, node2, weight }) => ({
+      source: typeof nodeMap.get(node1) === 'object' ? (nodeMap.get(node1) as { id: string }).id : node1,
+      target: typeof nodeMap.get(node2) === 'object' ? (nodeMap.get(node2) as { id: string }).id : node2,
+      weight,
+    }));
+  }, [edges, memoizedNodes]);
 
   function runAlgorithm(algo: keyof typeof algorithmMap) {
     const graph: GraphData = {
@@ -36,25 +44,40 @@ export default function Home() {
     };
   
     try {
-      const traversal = algorithmMap[algo](graph, selectedNode);
+      const result = algorithmMap[algo].run(graph, selectedNode);
+      const { traversal, steps, nodeAnnotations } = result;
+  
+      setHighlightedNodes([]);
+      setSelectedAlgo(algo);
+      setFullLog(''); 
+      setNodeAnnotations({});
+  
       let index = 0;
       const interval = setInterval(() => {
+        if (index >= steps.length) {
+          clearInterval(interval);
+          return;
+        }
+  
+        const step = steps[index];
         setHighlightedNodes(traversal.slice(0, index + 1));
+        if (step.nodeAnnotations) {
+          setNodeAnnotations(step.nodeAnnotations);
+        }
+        setFullLog(prev => prev + step.display + '\n');
         index++;
-        if (index >= traversal.length) clearInterval(interval);
       }, 500);
     } catch (err) {
       alert((err as Error).message);
     }
   }
-
+  
   return (
 <main className="w-full h-full flex flex-row ">
   {/* graph setup panel */}
   <div id='graph-setup' className="flex-2 p-4 bg-gray-100 dark:bg-gray-800 flex flex-col gap-4">
   <h1 className="text-xl font-bold">Graph Setup</h1>
 
-  <div className="flex flex-wrap gap-4">
     <div className="flex flex-row gap-2 items-center">
       <label htmlFor="undirected" className="text-sm font-semibold">Undirected</label>
       <input type="radio" id="undirected" name="graph-direction" value="undirected" checked={!isDirected} onChange={() => setIsDirected(false)} />
@@ -68,7 +91,6 @@ export default function Home() {
       <label htmlFor="weighted" className="text-sm font-semibold">Weighted</label>
       <input type="radio" id="weighted" name="graph-weight" value="weighted" checked={isWeighted} onChange={() => setIsWeighted(true)} />
     </div>
-  </div>
 
   {/* add node */}
   <div className="flex gap-2">
@@ -167,6 +189,7 @@ export default function Home() {
     isDirected={isDirected}
     isWeighted={isWeighted}
     highlightedNodes={highlightedNodes}
+    nodeAnnotations={nodeAnnotations}
   />
 
   </div>
@@ -174,18 +197,37 @@ export default function Home() {
   {/* panel for algorithm display */}
   <div id='algorithm-setup' className="flex-1 p-4 bg-gray-100 dark:bg-gray-800 flex flex-col gap-4">
     <h1 className="text-xl font-bold">Algorithm Setup</h1>
-    <p className="text-sm">Select an algorithm to visualize the graph traversal.</p>
-    <select
-      className="p-1 border rounded text-sm"
-      value={selectedNode}
-      onChange={(e) => setSelectedNode(e.target.value)}
-    >
+    <p>Select an algorithm to visualize the graph traversal.</p>
+
+    {/* select starting node */}
+    <div className='flex flex-row gap-2 items-start'>
+      <p>Starting Node:</p>
+      <select
+        className="p-1 border rounded text-sm"
+        value={selectedNode}
+        onChange={(e) => setSelectedNode(e.target.value)}
+      >
       {nodes.map((n) => (
         <option key={n}>{n}</option>
         ))}
       </select>
+    </div>
 
-    <button onClick={() => runAlgorithm("dfs")} className="...">DFS</button>
+    {/* select algorithm */}
+    <button className={`${selectedAlgo === 'dfs' ? 'bg-blue-200' : 'bg-blue-500'} text-white px-2 py-1 rounded text-sm cursor-pointer`} onClick={() => runAlgorithm("dfs")}>DFS</button>
+
+    {/* display traversal results */}
+    <p className="text-sm italic text-gray-600">
+      {algorithmMap[selectedAlgo]?.description}
+    </p>
+
+    <div className="mt-4 text-sm font-mono">
+      {fullLog.split('\n').map((line, index) => (
+        <div key={index} className="text-gray-700 dark:text-gray-300">
+          {line}
+        </div>
+      ))}
+    </div>
 
   </div>
 </main>

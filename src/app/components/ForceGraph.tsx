@@ -24,6 +24,8 @@ interface ForceGraphProps {
   isDirected: boolean;
   isWeighted: boolean;
   highlightedNodes?: string[];
+  nodeAnnotations?: Record<string, string>;
+
 }
 
 interface SimNode extends d3.SimulationNodeDatum {
@@ -39,7 +41,7 @@ interface SimLink extends d3.SimulationLinkDatum<SimNode> {
 }
   
 
-export default function ForceGraph({ nodes, edges, isDirected, isWeighted, highlightedNodes }: ForceGraphProps) {
+export default function ForceGraph({ nodes, edges, isDirected, isWeighted, highlightedNodes, nodeAnnotations }: ForceGraphProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
@@ -171,15 +173,25 @@ export default function ForceGraph({ nodes, edges, isDirected, isWeighted, highl
   //second useeffect to handle highlighted nodes without rerendering graph
   useEffect(() => {
     if (!svgRef.current || !highlightedNodes) return;
+
+    const svg = d3.select(svgRef.current);
   
-    d3.select(svgRef.current)
-      .select("#nodes")
+    // highlight color
+    svg.select("#nodes")
       .selectAll<SVGCircleElement, NodeType>("circle")
       .transition()
       .duration(300)
       .attr("fill", d => highlightedNodes.includes(d.id) ? "#4caf50" : "#ef5350");
   
-  }, [highlightedNodes]);
+    // update labels
+    svg.selectAll<SVGTextElement, NodeType>("text")
+      .text(d => {
+        const label = d.id;
+        const order = (nodeAnnotations?.[d.id] ?? '');
+        return order ? `${label} (${order})` : label;
+      });
+  
+  }, [highlightedNodes, nodeAnnotations]);
   
   
 
