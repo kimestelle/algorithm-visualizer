@@ -1,6 +1,7 @@
 'use client';
 
 import * as d3 from 'd3';
+
 import { useEffect, useRef } from 'react';
 
 interface NodeType {
@@ -22,6 +23,7 @@ interface ForceGraphProps {
   edges: LinkType[];
   isDirected: boolean;
   isWeighted: boolean;
+  highlightedNodes?: string[];
 }
 
 interface SimNode extends d3.SimulationNodeDatum {
@@ -37,7 +39,7 @@ interface SimLink extends d3.SimulationLinkDatum<SimNode> {
 }
   
 
-export default function ForceGraph({ nodes, edges, isDirected, isWeighted }: ForceGraphProps) {
+export default function ForceGraph({ nodes, edges, isDirected, isWeighted, highlightedNodes }: ForceGraphProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
@@ -83,7 +85,10 @@ export default function ForceGraph({ nodes, edges, isDirected, isWeighted }: For
       link.attr("marker-end", "url(#arrow)");
     }
 
-    const node = svg.append<SVGGElement>('g')
+    const nodeGroup = svg.append<SVGGElement>('g')
+        .attr('id', 'nodes'); 
+
+    const node = nodeGroup
       .selectAll<SVGCircleElement, NodeType>('circle')
       .data(nodes)
       .join('circle')
@@ -162,6 +167,21 @@ export default function ForceGraph({ nodes, edges, isDirected, isWeighted }: For
       
 
   }, [nodes, edges, isDirected, isWeighted]);
+
+  //second useeffect to handle highlighted nodes without rerendering graph
+  useEffect(() => {
+    if (!svgRef.current || !highlightedNodes) return;
+  
+    d3.select(svgRef.current)
+      .select("#nodes")
+      .selectAll<SVGCircleElement, NodeType>("circle")
+      .transition()
+      .duration(300)
+      .attr("fill", d => highlightedNodes.includes(d.id) ? "#4caf50" : "#ef5350");
+  
+  }, [highlightedNodes]);
+  
+  
 
   return <svg ref={svgRef} className="rounded border w-full max-w-[800px]" />;
 }

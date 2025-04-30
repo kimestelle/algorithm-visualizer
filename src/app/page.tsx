@@ -1,6 +1,8 @@
 'use client'
 import ForceGraph from './components/ForceGraph';
-import { useState } from "react";
+import { algorithmMap } from './algorithms';
+import { GraphData } from './types';
+import { useState, useMemo } from "react";
 
 export default function Home() {
   const [nodes, setNodes] = useState<string[]>(["A", "B", "C", "D", "E"]);
@@ -13,6 +15,38 @@ export default function Home() {
   ]);
   const [isDirected, setIsDirected] = useState(false);
   const [isWeighted, setIsWeighted] = useState(false);
+
+  const [highlightedNodes, setHighlightedNodes] = useState<string[]>([]);
+  const [selectedNode, setSelectedNode] = useState<string>(nodes[0]); 
+
+  //memoize nodes and edges to avoid unnecessary rerenders
+  const memoizedNodes = useMemo(() => nodes.map(id => ({ id })), [nodes]);
+  const memoizedEdges = useMemo(
+    () => edges.map(({ node1, node2, weight }) => ({ source: node1, target: node2, weight })),
+    [edges]
+  );
+
+
+  function runAlgorithm(algo: keyof typeof algorithmMap) {
+    const graph: GraphData = {
+      nodes: nodes.map((id) => ({ id })),
+      edges,
+      isDirected,
+      isWeighted,
+    };
+  
+    try {
+      const traversal = algorithmMap[algo](graph, selectedNode);
+      let index = 0;
+      const interval = setInterval(() => {
+        setHighlightedNodes(traversal.slice(0, index + 1));
+        index++;
+        if (index >= traversal.length) clearInterval(interval);
+      }, 500);
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  }
 
   return (
 <main className="w-full h-full flex flex-row ">
@@ -128,35 +162,31 @@ export default function Home() {
 
   {/* graph interface */}
   <ForceGraph
-    nodes={nodes.map(id => ({ id }))}
-    edges={edges.map(({ node1, node2, weight }) => ({ source: node1, target: node2, weight }))}
+    nodes={memoizedNodes}
+    edges={memoizedEdges}
     isDirected={isDirected}
     isWeighted={isWeighted}
+    highlightedNodes={highlightedNodes}
   />
+
   </div>
 
   {/* panel for algorithm display */}
   <div id='algorithm-setup' className="flex-1 p-4 bg-gray-100 dark:bg-gray-800 flex flex-col gap-4">
     <h1 className="text-xl font-bold">Algorithm Setup</h1>
     <p className="text-sm">Select an algorithm to visualize the graph traversal.</p>
-    <button
-      
-      className="bg-black/[.05] dark:bg-white/[.06] text-sm font-mono px-4 py-2 rounded hover:bg-black/[.1] dark:hover:bg-white/[.1] transition-colors"
+    <select
+      className="p-1 border rounded text-sm"
+      value={selectedNode}
+      onChange={(e) => setSelectedNode(e.target.value)}
     >
-      DFS
-    </button>
-    <button
-      
-      className="bg-black/[.05] dark:bg-white/[.06] text-sm font-mono px-4 py-2 rounded hover:bg-black/[.1] dark:hover:bg-white/[.1] transition-colors"
-    >
-      BFS
-    </button>
-    <button
-      
-      className="bg-black/[.05] dark:bg-white/[.06] text-sm font-mono px-4 py-2 rounded hover:bg-black/[.1] dark:hover:bg-white/[.1] transition-colors"
-    >
-      Dijkstra
-    </button>
+      {nodes.map((n) => (
+        <option key={n}>{n}</option>
+        ))}
+      </select>
+
+    <button onClick={() => runAlgorithm("dfs")} className="...">DFS</button>
+
   </div>
 </main>
 
