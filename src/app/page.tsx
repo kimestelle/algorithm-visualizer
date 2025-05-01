@@ -213,8 +213,21 @@ export default function Home() {
       </select>
     </div>
 
-    {/* select algorithm */}
-    <button className={`${selectedAlgo === 'dfs' ? 'bg-blue-200' : 'bg-blue-500'} text-white px-2 py-1 rounded text-sm cursor-pointer`} onClick={() => runAlgorithm("dfs")}>DFS</button>
+   {/* select algorithm */}
+<div className="flex flex-col gap-2">
+  <button
+    className={`${selectedAlgo === 'dfs' ? 'bg-blue-200' : 'bg-blue-500'} text-white px-2 py-1 rounded text-sm cursor-pointer`}
+    onClick={() => runAlgorithm("dfs")}
+  >
+    DFS
+  </button>
+  <button
+    className={`${selectedAlgo === 'bfs' ? 'bg-blue-200' : 'bg-blue-500'} text-white px-2 py-1 rounded text-sm cursor-pointer`}
+    onClick={() => runAlgorithm("bfs")}
+  >
+    BFS
+  </button>
+</div>
 
     {/* display traversal results */}
     <p className="text-sm italic text-gray-600">
