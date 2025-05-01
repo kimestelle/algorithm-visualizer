@@ -1,7 +1,6 @@
 'use client';
 
 import * as d3 from 'd3';
-
 import { useEffect, useRef } from 'react';
 
 interface NodeType {
@@ -25,120 +24,229 @@ interface ForceGraphProps {
   isWeighted: boolean;
   highlightedNodes?: string[];
   nodeAnnotations?: Record<string, string>;
-
+  setNodes: React.Dispatch<React.SetStateAction<string[]>>;
+  setEdges: React.Dispatch<React.SetStateAction<{ node1: string; node2: string; weight?: number }[]>>;
+  isWeightedGraph: boolean;
+  isRunningAlgorithm: boolean;
+  setErrorMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
 interface SimNode extends d3.SimulationNodeDatum {
-    id: string;
-    x?: number;
-    y?: number;
-  }
-  
-interface SimLink extends d3.SimulationLinkDatum<SimNode> {
-    source: string | SimNode;
-    target: string | SimNode;
-    weight?: number;
+  id: string;
+  x?: number;
+  y?: number;
 }
-  
 
-export default function ForceGraph({ nodes, edges, isDirected, isWeighted, highlightedNodes, nodeAnnotations }: ForceGraphProps) {
+interface SimLink extends d3.SimulationLinkDatum<SimNode> {
+  source: string | SimNode;
+  target: string | SimNode;
+  weight?: number;
+}
+
+export default function ForceGraph({
+  nodes,
+  edges,
+  isDirected,
+  isWeighted,
+  highlightedNodes,
+  nodeAnnotations,
+  setNodes,
+  setEdges,
+  isWeightedGraph,
+  isRunningAlgorithm,
+  setErrorMessage
+}: ForceGraphProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const simulationRef = useRef<d3.Simulation<NodeType, LinkType> | null>(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
-    d3.select(svgRef.current).selectAll('*').remove();
-
     const width = 600;
     const height = 400;
 
-    const simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink<NodeType, LinkType>(edges).id((d: NodeType) => d.id).distance(120))
-      .force('charge', d3.forceManyBody().strength(-400))
-      .force('center', d3.forceCenter(width / 2, height / 2));
+    // Only clear and re-render if graph structure or settings change
+    if (!simulationRef.current) {
+      d3.select(svgRef.current).selectAll('*').remove();
 
-    const svg = d3.select(svgRef.current)
-      .attr('width', width)
-      .attr('height', height);
+      const svg = d3.select(svgRef.current)
+        .attr('width', width)
+        .attr('height', height);
 
-    const link = svg.append('g')
-      .attr('stroke', '#aaa')
-      .selectAll('line')
-      .data(edges)
-      .join('line')
-      .attr('stroke-width', d => isWeighted && d.weight ? d.weight : 2);
+      const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink<NodeType, LinkType>(edges).id((d: NodeType) => d.id).distance(120))
+        .force('charge', d3.forceManyBody().strength(-400))
+        .force('center', d3.forceCenter(width / 2, height / 2));
+      simulationRef.current = simulation;
 
-    if (isDirected) {
-      svg.append("defs").selectAll("marker")
-        .data(["end"])
-        .join("marker")
-        .attr("id", "arrow")
-        .attr("stroke-width", 0)  
-        .attr("viewBox", "0 -5 10 10")
-        .attr("refX", 20)
-        .attr("refY", 0)
-        .attr("markerWidth", 6)
-        .attr("markerHeight", 6)
-        .attr("orient", "auto")
-        .append("path")
-        .attr("d", "M0,-5L10,0L0,5")
-        .attr("fill", "#999");
+      const linkGroup = svg.append('g')
+        .attr('stroke', '#aaa')
+        .attr('id', 'links');
 
-      link.attr("marker-end", "url(#arrow)");
-    }
-
-    const nodeGroup = svg.append<SVGGElement>('g')
-        .attr('id', 'nodes'); 
-
-    const node = nodeGroup
-      .selectAll<SVGCircleElement, NodeType>('circle')
-      .data(nodes)
-      .join('circle')
-      .attr('r', 15)
-      .attr('fill', '#ef5350')
-      .call(d3.drag<SVGCircleElement, NodeType>()
-        .on('start', (event: d3.D3DragEvent<SVGCircleElement, NodeType, NodeType>, d: NodeType) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
+      const link = linkGroup
+        .selectAll('line')
+        .data(edges)
+        .join('line')
+        .attr('stroke-width', d => {
+          const weight = isWeighted && d.weight != null ? d.weight : 2;
+          return Math.max(2, Math.min(10, weight));
         })
-        .on('drag', (event: d3.D3DragEvent<SVGCircleElement, NodeType, NodeType>, d: NodeType) => {
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on('end', (event: d3.D3DragEvent<SVGCircleElement, NodeType, NodeType>, d: NodeType) => {
-          if (!event.active) simulation.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
-        })
-      );
+        .on('click', (event, d) => {
+          if (isRunningAlgorithm) {
+            setErrorMessage('Cannot edit edges while an algorithm is running.');
+            return;
+          }
 
-    const text = svg.append<SVGGElement>('g')
-      .selectAll<SVGTextElement, NodeType>('text')
-      .data(nodes)
-      .join('text')
-      .text((d: NodeType) => d.id)
-      .attr('text-anchor', 'middle')
-      .attr('dy', -20)
-      .attr('font-size', 12);
-    
-    const edgeLabels = svg.append<SVGGElement>("g")
+          const sourceId = typeof d.source === 'object' ? d.source.id : d.source;
+          const targetId = typeof d.target === 'object' ? d.target.id : d.target;
+
+          if (isWeightedGraph) {
+            const action = prompt('Enter new edge weight or type "delete" to remove the edge:', d.weight?.toString() || '1');
+            if (action !== null) {
+              if (action.toLowerCase() === 'delete') {
+                setEdges(prev => {
+                  const newEdges = prev.filter(e =>
+                    !(e.node1 === sourceId && e.node2 === targetId) && !(e.node1 === targetId && e.node2 === sourceId)
+                  );
+                  return newEdges;
+                });
+              } else {
+                const weight = Number(action);
+                if (!isNaN(weight) && weight >= 0) {
+                  setEdges(prev => {
+                    const newEdges = prev.map(e =>
+                      (e.node1 === sourceId && e.node2 === targetId) || (!isDirected && e.node1 === targetId && e.node2 === sourceId)
+                        ? { ...e, weight }
+                        : e
+                    );
+                    return newEdges;
+                  });
+                } else {
+                  setErrorMessage('Please enter a valid non-negative number for the weight.');
+                }
+              }
+            }
+          } else {
+            const confirmDelete = confirm(`Delete edge between ${sourceId} and ${targetId}?`);
+            if (confirmDelete) {
+              setEdges(prev => {
+                const newEdges = prev.filter(e =>
+                  !(e.node1 === sourceId && e.node2 === targetId) && !(e.node1 === targetId && e.node2 === sourceId)
+                );
+                return newEdges;
+              });
+            }
+          }
+
+          d3.select(event.currentTarget)
+            .transition()
+            .duration(300)
+            .attr('stroke', '#ff0')
+            .transition()
+            .duration(300)
+            .attr('stroke', '#aaa');
+        });
+
+      if (isDirected) {
+        svg.append("defs").selectAll("marker")
+          .data(["end"])
+          .join("marker")
+          .attr("id", "arrow")
+          .attr("stroke-width", 0)
+          .attr("viewBox", "0 -5 10 10")
+          .attr("refX", 20)
+          .attr("refY", 0)
+          .attr("markerWidth", 6)
+          .attr("markerHeight", 6)
+          .attr("orient", "auto")
+          .append("path")
+          .attr("d", "M0,-5L10,0L0,5")
+          .attr("fill", "#999");
+
+        link.attr("marker-end", "url(#arrow)");
+      }
+
+      const nodeGroup = svg.append<SVGGElement>('g')
+        .attr('id', 'nodes');
+
+      const node = nodeGroup
+        .selectAll<SVGCircleElement, NodeType>('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('r', 15)
+        .attr('fill', '#ef5350')
+        .call(d3.drag<SVGCircleElement, NodeType>()
+          .on('start', (event: d3.D3DragEvent<SVGCircleElement, NodeType, NodeType>, d: NodeType) => {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+          })
+          .on('drag', (event: d3.D3DragEvent<SVGCircleElement, NodeType, NodeType>, d: NodeType) => {
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+          .on('end', (event: d3.D3DragEvent<SVGCircleElement, NodeType, NodeType>, d: NodeType) => {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+          })
+        )
+        .on('click', (event, d) => {
+          if (isRunningAlgorithm) {
+            setErrorMessage('Cannot edit nodes while an algorithm is running.');
+            return;
+          }
+
+          const newLabel = prompt('Enter new node label:', d.id);
+          if (newLabel !== null && newLabel.trim() && !nodes.some(n => n.id === newLabel.trim())) {
+            setNodes(prev => prev.map(id => id === d.id ? newLabel.trim() : id));
+            setEdges(prev => prev.map(e => ({
+              node1: e.node1 === d.id ? newLabel.trim() : e.node1,
+              node2: e.node2 === d.id ? newLabel.trim() : e.node2,
+              weight: e.weight
+            })));
+          } else if (newLabel !== null && (newLabel.trim() === '' || nodes.some(n => n.id === newLabel.trim()))) {
+            setErrorMessage('Please enter a unique, non-empty node label.');
+          }
+
+          d3.select(event.currentTarget)
+            .transition()
+            .duration(300)
+            .attr('stroke', '#ff0')
+            .attr('stroke-width', 2)
+            .transition()
+            .duration(300)
+            .attr('stroke', null)
+            .attr('stroke-width', 0);
+        });
+
+      const text = svg.append<SVGGElement>('g')
+        .attr('id', 'node-labels')
+        .selectAll<SVGTextElement, NodeType>('text')
+        .data(nodes)
+        .join('text')
+        .text((d: NodeType) => d.id)
+        .attr('text-anchor', 'middle')
+        .attr('dy', -20)
+        .attr('font-size', 12);
+
+      const edgeLabels = svg.append<SVGGElement>("g")
+        .attr('id', 'edge-labels')
         .selectAll("text")
         .data(edges)
         .join("text")
         .attr("font-size", 12)
-        .attr("fill", "#444")
-        .text(d => isWeighted && d.weight ? `${d.weight}` : "");
+        .attr("fill", "#444");
 
       const nodeRadius = 15;
 
       simulation.on('tick', () => {
         link
-            .attr('x1', (d: SimLink) => typeof d.source === 'object' ? d.source.x ?? 0 : 0)
-            .attr('y1', (d: SimLink) => typeof d.source === 'object' ? d.source.y ?? 0 : 0)
-            .attr('x2', (d: SimLink) => typeof d.target === 'object' ? d.target.x ?? 0 : 0)
-            .attr('y2', (d: SimLink) => typeof d.target === 'object' ? d.target.y ?? 0 : 0)
-            
+          .attr('x1', (d: SimLink) => typeof d.source === 'object' ? d.source.x ?? 0 : 0)
+          .attr('y1', (d: SimLink) => typeof d.source === 'object' ? d.source.y ?? 0 : 0)
+          .attr('x2', (d: SimLink) => typeof d.target === 'object' ? d.target.x ?? 0 : 0)
+          .attr('y2', (d: SimLink) => typeof d.target === 'object' ? d.target.y ?? 0 : 0);
+
         node
           .attr('cx', d => {
             d.x = Math.max(nodeRadius, Math.min(width - nodeRadius, d.x!));
@@ -148,7 +256,7 @@ export default function ForceGraph({ nodes, edges, isDirected, isWeighted, highl
             d.y = Math.max(nodeRadius, Math.min(height - nodeRadius, d.y!));
             return d.y!;
           });
-      
+
         text
           .attr('x', d => d.x!)
           .attr('y', d => d.y!);
@@ -162,38 +270,84 @@ export default function ForceGraph({ nodes, edges, isDirected, isWeighted, highl
           .attr("y", d => {
             const sy = typeof d.source === 'object' ? d.source.y ?? 0 : 0;
             const ty = typeof d.target === 'object' ? d.target.y ?? 0 : 0;
-            return (sy + ty) / 2;
-          });
-        
+            return (sy + ty) / 2 + 5;
+          })
+          .text(d => isWeighted && d.weight != null ? `${d.weight}` : "");
       });
-      
+    } else {
+      // Update existing simulation with new nodes and edges
+      simulationRef.current.nodes(nodes);
+      simulationRef.current.force('link').links(edges);
+      simulationRef.current.alpha(0.3).restart();
 
-  }, [nodes, edges, isDirected, isWeighted]);
+      const svg = d3.select(svgRef.current);
+      svg.select('#links')
+        .selectAll('line')
+        .data(edges)
+        .join('line')
+        .attr('stroke-width', d => {
+          const weight = isWeighted && d.weight != null ? d.weight : 2;
+          return Math.max(2, Math.min(10, weight));
+        })
+        .attr('stroke', '#aaa')
+        .attr('marker-end', isDirected ? 'url(#arrow)' : null);
 
-  //second useeffect to handle highlighted nodes without rerendering graph
+      svg.select('#nodes')
+        .selectAll<SVGCircleElement, NodeType>('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('r', 15)
+        .attr('fill', d => highlightedNodes?.includes(d.id) ? '#4caf50' : '#ef5350');
+
+      svg.select('#node-labels')
+        .selectAll<SVGTextElement, NodeType>('text')
+        .data(nodes)
+        .join('text')
+        .text(d => {
+          const label = d.id;
+          const order = (nodeAnnotations?.[d.id] ?? '');
+          return order ? `${label} (${order})` : label;
+        })
+        .attr('text-anchor', 'middle')
+        .attr('dy', -20)
+        .attr('font-size', 12);
+
+      svg.select('#edge-labels')
+        .selectAll("text")
+        .data(edges)
+        .join("text")
+        .attr("font-size", 12)
+        .attr("fill", "#444")
+        .text(d => isWeighted && d.weight != null ? `${d.weight}` : "");
+    }
+
+    return () => {
+      if (simulationRef.current) {
+        simulationRef.current.stop();
+        simulationRef.current = null;
+      }
+    };
+  }, [nodes, edges, isDirected, isWeighted, isWeightedGraph, setNodes, setEdges, setErrorMessage]);
+
   useEffect(() => {
     if (!svgRef.current || !highlightedNodes) return;
 
     const svg = d3.select(svgRef.current);
-  
-    // highlight color
+
     svg.select("#nodes")
       .selectAll<SVGCircleElement, NodeType>("circle")
       .transition()
       .duration(300)
       .attr("fill", d => highlightedNodes.includes(d.id) ? "#4caf50" : "#ef5350");
-  
-    // update labels
-    svg.selectAll<SVGTextElement, NodeType>("text")
+
+    svg.select("#node-labels")
+      .selectAll<SVGTextElement, NodeType>("text")
       .text(d => {
         const label = d.id;
         const order = (nodeAnnotations?.[d.id] ?? '');
         return order ? `${label} (${order})` : label;
       });
-  
   }, [highlightedNodes, nodeAnnotations]);
-  
-  
 
   return <svg ref={svgRef} className="rounded border w-full max-w-[800px]" />;
 }
