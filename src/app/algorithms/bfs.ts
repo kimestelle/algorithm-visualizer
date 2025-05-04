@@ -1,4 +1,3 @@
-// bfs.ts
 import { GraphData, TraversalLogEntry, TraversalResult } from "../types";
 
 export function runBFS(graph: GraphData, startId?: string): TraversalResult {

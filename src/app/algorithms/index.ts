@@ -1,7 +1,6 @@
-// index.ts
 import { runDFS } from "./dfs";
 import { runBFS } from "./bfs";
-import { runDijkstra } from "./dijkstra"; // Import Dijkstra
+import { runDijkstra } from "./dijkstra"; 
 import { GraphData, TraversalResult } from "../types";
 
 export type TraversalFunction = (graph: GraphData, startId: string) => TraversalResult;

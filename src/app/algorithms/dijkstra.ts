@@ -1,4 +1,3 @@
-// src/algorithms/dijkstra.ts
 import { GraphData, TraversalLogEntry, TraversalResult } from "../types";
 
 export function runDijkstra(graph: GraphData, startId?: string): TraversalResult {
@@ -73,6 +72,8 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
     traversal,
     log: distances,
     steps,
-    nodeAnnotations: distances
+    nodeAnnotations: Object.fromEntries(
+      Object.entries(distances).map(([key, value]) => [key, value.toString()])
+    )
   };
 }
