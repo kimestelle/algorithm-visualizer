@@ -47,6 +47,7 @@ export default function Home() {
       weight,
     }));
   }, [edges, memoizedNodes]);
+  
 
   const clearGraph = () => {
     setNodes([]);

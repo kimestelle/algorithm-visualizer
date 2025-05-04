@@ -249,11 +249,11 @@ export default function ForceGraph({
 
         node
           .attr('cx', d => {
-            d.x = Math.max(nodeRadius, Math.min(width - nodeRadius, d.x!));
+            d.x = Math.max(nodeRadius, Math.min(width - nodeRadius * 2, d.x!));
             return d.x!;
           })
           .attr('cy', d => {
-            d.y = Math.max(nodeRadius, Math.min(height - nodeRadius, d.y!));
+            d.y = Math.max(nodeRadius, Math.min(height - nodeRadius * 2, d.y!));
             return d.y!;
           });
 

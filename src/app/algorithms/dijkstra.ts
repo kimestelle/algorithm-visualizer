@@ -27,7 +27,7 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
 
   while (pq.length > 0) {
     pq.sort((a, b) => a[1] - b[1]);
-    const [current, currentDist] = pq.shift()!;
+    const [current] = pq.shift()!;
 
     if (visited.has(current)) continue;
 
