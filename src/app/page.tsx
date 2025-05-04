@@ -23,7 +23,6 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isRunningAlgorithm, setIsRunningAlgorithm] = useState<boolean>(false);
 
-  // Update edge weights when switching to weighted graph
   useEffect(() => {
     if (isWeighted) {
       setEdges(prev => prev.map(edge => ({
@@ -42,12 +41,11 @@ export default function Home() {
   const memoizedEdges = useMemo(() => {
     const nodeMap = new Map(memoizedNodes.map(n => [n.id, n]));
     return edges.map(({ node1, node2, weight }) => ({
-      source: typeof nodeMap.get(node1) === 'object' ? (nodeMap.get(node1) as { id: string }).id : node1,
-      target: typeof nodeMap.get(node2) === 'object' ? (nodeMap.get(node2) as { id: string }).id : node2,
+      source: nodeMap.get(node1)?.id || node1,
+      target: nodeMap.get(node2)?.id || node2,
       weight,
     }));
   }, [edges, memoizedNodes]);
-  
 
   const clearGraph = () => {
     setNodes([]);
@@ -70,12 +68,9 @@ export default function Home() {
     };
 
     try {
-      if (!graph.nodes.length) {
-        throw new Error("The graph is empty. Add nodes and edges to run the algorithm.");
-      }
-      if (!selectedNode || !graph.nodes.some(n => n.id === selectedNode)) {
-        throw new Error("Please select a valid starting node.");
-      }
+      if (!graph.nodes.length) throw new Error("The graph is empty. Add nodes and edges to run the algorithm.");
+      if (!selectedNode || !graph.nodes.some(n => n.id === selectedNode)) throw new Error("Please select a valid starting node.");
+
       const result = algorithmMap[algo].run(graph, selectedNode);
       const { traversal, steps, nodeAnnotations: finalAnnotations } = result;
 
@@ -90,18 +85,14 @@ export default function Home() {
       const interval = setInterval(() => {
         if (index >= steps.length) {
           clearInterval(interval);
-          // Set final state to preserve highlighted nodes and annotations
           setHighlightedNodes(traversal);
           setNodeAnnotations(finalAnnotations || {});
           setIsRunningAlgorithm(false);
           return;
         }
-
         const step = steps[index];
         setHighlightedNodes(traversal.slice(0, index + 1));
-        if (step.nodeAnnotations) {
-          setNodeAnnotations(step.nodeAnnotations);
-        }
+        if (step.nodeAnnotations) setNodeAnnotations(step.nodeAnnotations);
         setFullLog(prev => prev + step.display + '\n');
         index++;
       }, 500);
@@ -125,109 +116,61 @@ export default function Home() {
   }
 
   return (
-    <main className="w-full h-full flex flex-row">
-      <div id='graph-setup' className="flex-2 p-4 bg-gray-100 dark:bg-gray-800 flex flex-col gap-4">
-        <h1 className="text-xl font-bold">Graph Setup</h1>
-        <div className="flex flex-row gap-2 items-center">
-          <label htmlFor="undirected" className="text-sm font-semibold">Undirected</label>
-          <input type="radio" id="undirected" name="graph-direction" value="undirected" checked={!isDirected} onChange={() => setIsDirected(false)} />
-          <label htmlFor="directed" className="text-sm font-semibold">Directed</label>
-          <input type="radio" id="directed" name="graph-direction" value="directed" checked={isDirected} onChange={() => setIsDirected(true)} />
+    <main className="w-full h-full flex flex-col md:flex-row font-sans text-[15px] bg-gradient-to-br from-white via-gray-100 to-slate-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-950 text-gray-900 dark:text-gray-100">
+      <div id='graph-setup' className="flex-1 p-4 bg-white/90 dark:bg-gray-800/90 flex flex-col gap-3 rounded-lg shadow-xl">
+        <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-300">Graph Setup</h1>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="font-semibold">Direction:</span>
+          <label className="flex items-center gap-1"><input type="radio" name="graph-direction" checked={!isDirected} onChange={() => setIsDirected(false)} className="accent-indigo-500" /> Undirected</label>
+          <label className="flex items-center gap-1"><input type="radio" name="graph-direction" checked={isDirected} onChange={() => setIsDirected(true)} className="accent-indigo-500" /> Directed</label>
+          <span className="ml-4 font-semibold">Weight:</span>
+          <label className="flex items-center gap-1"><input type="radio" name="graph-weight" checked={!isWeighted} onChange={() => setIsWeighted(false)} className="accent-indigo-500" /> Unweighted</label>
+          <label className="flex items-center gap-1"><input type="radio" name="graph-weight" checked={isWeighted} onChange={() => setIsWeighted(true)} className="accent-indigo-500" /> Weighted</label>
         </div>
-        <div className="flex flex-row gap-2 items-center">
-          <label htmlFor="unweighted" className="text-sm font-semibold">Unweighted</label>
-          <input type="radio" id="unweighted" name="graph-weight" value="unweighted" checked={!isWeighted} onChange={() => setIsWeighted(false)} />
-          <label htmlFor="weighted" className="text-sm font-semibold">Weighted</label>
-          <input type="radio" id="weighted" name="graph-weight" value="weighted" checked={isWeighted} onChange={() => setIsWeighted(true)} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <div className="flex flex-1 gap-2 items-center">
+            <button className="whitespace-nowrap bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded-md text-xs">Add Node</button>
+            <input type="text" placeholder="New node ID" id="new-node-id" className="p-1 border rounded text-xs bg-white dark:bg-gray-700 w-full" />
+          </div>
+
+          <div className="flex flex-wrap gap-2 items-center">
+            <button className="whitespace-nowrap bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded-md text-xs">Add Edge</button>
+            <select id="edge-node1" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
+              {nodes.map(n => <option key={n}>{n}</option>)}
+            </select>
+            →
+            <select id="edge-node2" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
+              {nodes.map(n => <option key={n}>{n}</option>)}
+            </select>
+            {isWeighted && (
+              <input id="edge-weight" type="number" placeholder="Weight" defaultValue="1" className="p-1 border rounded text-xs w-16 bg-white dark:bg-gray-700" />
+            )}
+          </div>
+
+          <div className="flex gap-2 items-center">
+            <button className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-md text-xs">Delete Node</button>
+            <select id="delete-node-id" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
+              {nodes.map(n => <option key={n}>{n}</option>)}
+            </select>
+          </div>
+
+          <div className="flex gap-2 items-center">
+            <button className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-md text-xs">Delete Edge</button>
+            <select id="delete-edge-node1" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
+              {nodes.map(n => <option key={n}>{n}</option>)}
+            </select>
+            →
+            <select id="delete-edge-node2" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
+              {nodes.map(n => <option key={n}>{n}</option>)}
+            </select>
+          </div>
+
+          <div className="sm:col-span-2 flex justify-start">
+            <button onClick={clearGraph} className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded-md text-xs font-medium">Clear Graph</button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={clearGraph} className="bg-red-400 text-white px-2 py-1 rounded text-sm">
-            Clear Graph
-          </button>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              const input = document.getElementById("new-node-id") as HTMLInputElement;
-              const newId = input.value.trim();
-              if (newId && !nodes.includes(newId)) {
-                setNodes(prev => [...prev, newId]);
-                input.value = "";
-              }
-            }}
-            className="bg-red-400 text-white px-2 py-1 rounded text-sm"
-          >
-            Add Node
-          </button>
-          <input type="text" placeholder="New node ID" id="new-node-id" className="p-1 border rounded text-sm" />
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <button
-            onClick={() => {
-              const node1 = (document.getElementById("edge-node1") as HTMLInputElement).value.trim();
-              const node2 = (document.getElementById("edge-node2") as HTMLInputElement).value.trim();
-              const weightInput = document.getElementById("edge-weight") as HTMLInputElement;
-              const weight = isWeighted ? Number(weightInput?.value) || 1 : undefined;
-              if (node1 && node2 && node1 !== node2) {
-                setEdges(prev => [...prev, { node1, node2, weight }]);
-                (document.getElementById("edge-node1") as HTMLInputElement).value = "";
-                (document.getElementById("edge-node2") as HTMLInputElement).value = "";
-                if (isWeighted && weightInput) weightInput.value = "";
-              }
-            }}
-            className="bg-red-500 text-white px-2 py-1 rounded text-sm"
-          >
-            Add Edge
-          </button>
-          <select id="edge-node1" className="p-1 border rounded text-sm">
-            {nodes.map(n => <option key={n}>{n}</option>)}
-          </select>
-          →
-          <select id="edge-node2" className="p-1 border rounded text-sm">
-            {nodes.map(n => <option key={n}>{n}</option>)}
-          </select>
-          {isWeighted && (
-            <input id="edge-weight" type="number" placeholder="Weight" defaultValue="1" className="p-1 border rounded text-sm w-20" />
-          )}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              const input = document.getElementById("delete-node-id") as HTMLInputElement;
-              const toDelete = input.value.trim();
-              setNodes(prev => prev.filter(n => n !== toDelete));
-              setEdges(prev => prev.filter(e => e.node1 !== toDelete && e.node2 !== toDelete));
-              input.value = "";
-            }}
-            className="bg-red-600 text-white px-2 py-1 rounded text-sm"
-          >
-            Delete Node
-          </button>
-          <select id="delete-node-id" className="p-1 border rounded text-sm">
-            {nodes.map(n => <option key={n}>{n}</option>)}
-          </select>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              const node1 = (document.getElementById("delete-edge-node1") as HTMLInputElement).value.trim();
-              const node2 = (document.getElementById("delete-edge-node2") as HTMLInputElement).value.trim();
-              setEdges(prev => prev.filter(e => 
-                !(e.node1 === node1 && e.node2 === node2) && !(e.node1 === node2 && e.node2 === node1)
-              ));
-            }}
-            className="bg-red-700 text-white px-2 py-1 rounded text-sm"
-          >
-            Delete Edge
-          </button>
-          <select id="delete-edge-node1" className="p-1 border rounded text-sm">
-            {nodes.map(n => <option key={n}>{n}</option>)}
-          </select>
-          →
-          <select id="delete-edge-node2" className="p-1 border rounded text-sm">
-            {nodes.map(n => <option key={n}>{n}</option>)}
-          </select>
-        </div>
+
         <ForceGraph
           nodes={memoizedNodes}
           edges={memoizedEdges}
@@ -242,51 +185,40 @@ export default function Home() {
           setErrorMessage={setErrorMessage}
         />
       </div>
-      <div id='algorithm-setup' className="flex-1 p-4 bg-gray-100 dark:bg-gray-800 flex flex-col gap-4">
-        <h1 className="text-xl font-bold">Algorithm Setup</h1>
-        <p>Select an algorithm to visualize the graph traversal.</p>
+      {/* ALGORITHM SETUP */}
+      <div id='algorithm-setup' className="flex-1 p-4 bg-white/90 dark:bg-gray-800/90 flex flex-col gap-3 rounded-lg shadow-xl">
+        <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-300">Algorithm Setup</h1>
+        <p className="text-xs text-gray-600 dark:text-gray-400">Select an algorithm to visualize the graph traversal.</p>
+
         {errorMessage && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm">
+          <div className="bg-red-100 dark:bg-red-800 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-3 py-2 rounded text-xs">
             {errorMessage}
           </div>
         )}
-        <div className='flex flex-row gap-2 items-start'>
-          <p>Starting Node:</p>
-          <select
-            className="p-1 border rounded text-sm"
-            value={selectedNode}
-            onChange={(e) => setSelectedNode(e.target.value)}
-          >
+
+        <div className='flex flex-row gap-2 items-center'>
+          <p className="font-semibold text-xs">Starting Node:</p>
+          <select className="p-1 border rounded text-xs bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600" value={selectedNode} onChange={(e) => setSelectedNode(e.target.value)}>
             <option value="">Select a node</option>
             {nodes.map((n) => (
               <option key={n}>{n}</option>
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-2">
-          <button
-            className={`${selectedAlgo === 'dfs' ? 'bg-blue-200' : 'bg-blue-500'} text-white px-2 py-1 rounded text-sm cursor-pointer`}
-            onClick={() => runAlgorithm("dfs")}
-          >
-            DFS
-          </button>
-          <button
-            className={`${selectedAlgo === 'bfs' ? 'bg-blue-200' : 'bg-blue-500'} text-white px-2 py-1 rounded text-sm cursor-pointer`}
-            onClick={() => runAlgorithm("bfs")}
-          >
-            BFS
-          </button>
-          <button
-            className={`${selectedAlgo === 'dijkstra' ? 'bg-blue-200' : 'bg-blue-500'} text-white px-2 py-1 rounded text-sm cursor-pointer`}
-            onClick={() => runAlgorithm("dijkstra")}
-          >
-            Dijkstra
-          </button>
+
+        <div className="grid grid-cols-3 gap-2">
+          {['dfs', 'bfs', 'dijkstra'].map(algo => (
+            <button key={algo} onClick={() => runAlgorithm(algo as keyof typeof algorithmMap)} className={`${selectedAlgo === algo ? 'bg-purple-300 dark:bg-purple-600' : 'bg-purple-500 dark:bg-purple-700'} text-white px-2 py-1 rounded-md text-xs font-medium transition`}>
+              {algo.toUpperCase()}
+            </button>
+          ))}
         </div>
-        <p className="text-sm italic text-gray-600">
+
+        <p className="text-xs italic text-gray-600 dark:text-gray-400">
           {algorithmMap[selectedAlgo]?.description}
         </p>
-        <div className="mt-4 text-sm font-mono">
+
+        <div className="mt-2 text-xs font-mono bg-gray-100 dark:bg-gray-900 p-2 rounded-lg overflow-y-auto max-h-60 shadow-inner">
           {fullLog.split('\n').map((line, index) => (
             <div key={index} className="text-gray-700 dark:text-gray-300">
               {line}
