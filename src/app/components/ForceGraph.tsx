@@ -97,8 +97,8 @@ export default function ForceGraph({
             return;
           }
 
-          const sourceId = typeof d.source === 'object' ? d.source.id : d.source;
-          const targetId = typeof d.target === 'object' ? d.target.id : d.target;
+          const sourceId = typeof d.source === 'object' ? (d.source as SimNode).id : d.source;
+          const targetId = typeof d.target === 'object' ? (d.target as SimNode).id : d.target;
 
           if (isWeightedGraph) {
             const action = prompt('Enter new edge weight or type "delete" to remove the edge:', d.weight?.toString() || '1');
@@ -263,21 +263,22 @@ export default function ForceGraph({
 
         edgeLabels
           .attr("x", d => {
-            const sx = typeof d.source === 'object' ? d.source.x ?? 0 : 0;
-            const tx = typeof d.target === 'object' ? d.target.x ?? 0 : 0;
+            const sx = typeof d.source === 'object' ? (d.source as SimNode).x ?? 0 : 0;
+            const tx = typeof d.target === 'object' ? (d.target as SimNode).x ?? 0 : 0;
             return (sx + tx) / 2;
           })
           .attr("y", d => {
-            const sy = typeof d.source === 'object' ? d.source.y ?? 0 : 0;
-            const ty = typeof d.target === 'object' ? d.target.y ?? 0 : 0;
+            const sy = typeof d.source === 'object' ? (d.source as SimNode).y ?? 0 : 0;
+            const ty = typeof d.target === 'object' ? (d.target as SimNode).y ?? 0 : 0;
             return (sy + ty) / 2 + 5;
           })
           .text(d => isWeighted && d.weight != null ? `${d.weight}` : "");
       });
     } else {
-      // Update existing simulation with new nodes and edges
       simulationRef.current.nodes(nodes);
-      simulationRef.current.force('link').links(edges);
+      if (simulationRef.current) {
+        (simulationRef.current?.force('link') as d3.ForceLink<NodeType, LinkType>)?.links(edges);
+      }
       simulationRef.current.alpha(0.3).restart();
 
       const svg = d3.select(svgRef.current);
