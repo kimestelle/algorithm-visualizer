@@ -1,5 +1,8 @@
 import { GraphData, TraversalLogEntry, TraversalResult } from "../types";
 
+// Depth-First Search (DFS):
+// Explores as far as possible along each branch before backtracking. 
+// Returns traversal order, log, and per-step annotations for visualization.
 export function runDFS(graph: GraphData, startId?: string): TraversalResult {
   if (graph.isWeighted) throw new Error("DFS does not run on a weighted graph");
 
@@ -10,7 +13,7 @@ export function runDFS(graph: GraphData, startId?: string): TraversalResult {
   const fullDisplay: string[] = [];
   const nodeAnnotations: Record<string, string> = {};
 
-  // helper that empties stack in a standard DFS
+  //  DFS Traversal for a connected component 
   function processComponent(initial: string) {
     const stack = [initial];
 
@@ -23,7 +26,7 @@ export function runDFS(graph: GraphData, startId?: string): TraversalResult {
       result.push(node);
       nodeAnnotations[node] = String(result.length);
 
-      // record one step
+      // Record this step for animation/logging
       const visitedList = Array.from(visited);
       const structure   = [...stack];
       const stepDisplay = `Current: ${node} | Stack: ${structure.join(' → ')} | Visited: ${visitedList.join(', ')}`;
@@ -37,7 +40,7 @@ export function runDFS(graph: GraphData, startId?: string): TraversalResult {
       });
       fullDisplay.push(stepDisplay);
 
-      // push all unvisited neighbors
+      // Push unvisited neighbors (reversed to preserve DFS order)
       const neighbors = graph.edges
         .filter(e => e.node1 === node || (!graph.isDirected && e.node2 === node))
         .map(e => e.node1 === node ? e.node2 : e.node1)
@@ -49,12 +52,12 @@ export function runDFS(graph: GraphData, startId?: string): TraversalResult {
     }
   }
 
-  // 1) Optionally start from a preferred node
+  //Start DFS from a given node if valid
   if (startId && graph.nodes.some(n => n.id === startId)) {
     processComponent(startId);
   }
 
-  // 2) Then sweep through *all* nodes to catch disconnected ones
+  // Catch any disconnected components
   for (const { id } of graph.nodes) {
     if (!visited.has(id)) {
       processComponent(id);

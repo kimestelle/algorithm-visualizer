@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Global styles with light/dark theme support and Tailwind integration */
 :root {
   --background: #ffffff;
   --foreground: #171717;

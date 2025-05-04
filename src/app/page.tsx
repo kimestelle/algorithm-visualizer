@@ -5,7 +5,9 @@ import { GraphData } from './types';
 import { useState, useMemo, useEffect } from "react";
 
 export default function Home() {
-  const [nodes, setNodes] = useState<string[]>(["A", "B", "C", "D", "E"]);
+  // Manages Graph State: 
+  // Handles node list, edge list, and graph type toggles (directed/weighted)
+  const [nodes, setNodes] = useState<string[]>(["A", "B", "C", "D", "E"]); // Initial graph nodes
   const [edges, setEdges] = useState<{ node1: string; node2: string; weight?: number }[]>([
     { node1: "A", node2: "B", weight: 1 },
     { node1: "A", node2: "C", weight: 1 },
@@ -13,16 +15,23 @@ export default function Home() {
     { node1: "C", node2: "E", weight: 1 },
     { node1: "D", node2: "E", weight: 1 },
   ]);
-  const [isDirected, setIsDirected] = useState(false);
+  const [isDirected, setIsDirected] = useState(false); 
   const [isWeighted, setIsWeighted] = useState(false);
-  const [highlightedNodes, setHighlightedNodes] = useState<string[]>([]);
-  const [selectedNode, setSelectedNode] = useState<string>(nodes[0]);
-  const [fullLog, setFullLog] = useState<string>('');
-  const [selectedAlgo, setSelectedAlgo] = useState<keyof typeof algorithmMap>("");
-  const [nodeAnnotations, setNodeAnnotations] = useState<Record<string, string>>({});
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [isRunningAlgorithm, setIsRunningAlgorithm] = useState<boolean>(false);
 
+  
+  // Graph Visualization & Interaction Management:
+  // Highlighted nodes during traversal, selected node for algorithm, full log of steps, 
+  // selected algorithm, node annotations, error message, and running stat
+  const [highlightedNodes, setHighlightedNodes] = useState<string[]>([]); 
+  const [selectedNode, setSelectedNode] = useState<string>(nodes[0]); 
+  const [fullLog, setFullLog] = useState<string>(''); 
+  const [selectedAlgo, setSelectedAlgo] = useState<keyof typeof algorithmMap>(""); 
+  const [nodeAnnotations, setNodeAnnotations] = useState<Record<string, string>>({}); 
+  const [errorMessage, setErrorMessage] = useState<string>(''); 
+  const [isRunningAlgorithm, setIsRunningAlgorithm] = useState<boolean>(false); 
+
+  // Edge Weight Normalization: 
+  // Ensures consistent edge weight format when toggling between weighted and unweighted
   useEffect(() => {
     if (isWeighted) {
       setEdges(prev => prev.map(edge => ({
@@ -37,6 +46,8 @@ export default function Home() {
     }
   }, [isWeighted]);
 
+  // Memoized Data for Rendering:
+  // Prevents unnecessary recalculations in ForceGraph
   const memoizedNodes = useMemo(() => nodes.map(id => ({ id })), [nodes]);
   const memoizedEdges = useMemo(() => {
     const nodeMap = new Map(memoizedNodes.map(n => [n.id, n]));
@@ -47,6 +58,9 @@ export default function Home() {
     }));
   }, [edges, memoizedNodes]);
 
+
+  // Graph Reset:
+  // Clears all graph data and resets UI state
   const clearGraph = () => {
     setNodes([]);
     setEdges([]);
@@ -59,6 +73,8 @@ export default function Home() {
     setIsRunningAlgorithm(false);
   };
 
+  // Run Algorithm:
+  // Validates inputs, runs selected algorithm, and animates traversal step-by-step
   function runAlgorithm(algo: keyof typeof algorithmMap) {
     const graph: GraphData = {
       nodes: nodes.map((id) => ({ id })),
@@ -68,12 +84,15 @@ export default function Home() {
     };
 
     try {
+      // Input validation
       if (!graph.nodes.length) throw new Error("The graph is empty. Add nodes and edges to run the algorithm.");
       if (!selectedNode || !graph.nodes.some(n => n.id === selectedNode)) throw new Error("Please select a valid starting node.");
 
+      // Execute algorithm
       const result = algorithmMap[algo].run(graph, selectedNode);
       const { traversal, steps, nodeAnnotations: finalAnnotations } = result;
 
+      // Reset UI before animation
       setHighlightedNodes([]);
       setSelectedAlgo(algo);
       setFullLog('');
@@ -81,6 +100,7 @@ export default function Home() {
       setErrorMessage('');
       setIsRunningAlgorithm(true);
 
+      // Animate traversal log and highlight updates
       let index = 0;
       const interval = setInterval(() => {
         if (index >= steps.length) {
@@ -97,6 +117,7 @@ export default function Home() {
         index++;
       }, 500);
     } catch (err) {
+      // Handle algorithm-specific and validation errors
       const message = err instanceof Error ? err.message : "An unexpected error occurred.";
       let userFriendlyMessage = message;
 
@@ -115,6 +136,7 @@ export default function Home() {
     }
   }
 
+  // UI Rendering Section
   return (
     <main className="w-full h-full flex flex-col md:flex-row font-sans text-[15px] bg-gradient-to-br from-white via-gray-100 to-slate-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-950 text-gray-900 dark:text-gray-100">
       <div id='graph-setup' className="flex-1 p-4 bg-white/90 dark:bg-gray-800/90 flex flex-col gap-3 rounded-lg shadow-xl">
@@ -185,7 +207,8 @@ export default function Home() {
           setErrorMessage={setErrorMessage}
         />
       </div>
-      {/* ALGORITHM SETUP */}
+
+      {/* Algorithm Setup */}
       <div id='algorithm-setup' className="flex-1 p-4 bg-white/90 dark:bg-gray-800/90 flex flex-col gap-3 rounded-lg shadow-xl">
         <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-300">Algorithm Setup</h1>
         <p className="text-xs text-gray-600 dark:text-gray-400">Select an algorithm to visualize the graph traversal.</p>

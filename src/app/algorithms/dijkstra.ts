@@ -1,6 +1,10 @@
 import { GraphData, TraversalLogEntry, TraversalResult } from "../types";
 
+// Dijkstra's Algorithm:
+// Computes shortest paths from a start node to all others in a weighted graph with non-negative edge weights.
+// Returns a traversal log with step-by-step details for visualization.
 export function runDijkstra(graph: GraphData, startId?: string): TraversalResult {
+  // Input validation: check if the graph is weighted and if the start node is valid
   if (!startId || !graph.nodes.some(n => n.id === startId)) {
     throw new Error("Invalid or missing start node");
   }
@@ -11,6 +15,7 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
     throw new Error("Dijkstra's algorithm does not support negative weights");
   }
 
+  // Initialize data structures: distances, previous node map, priority queue, and result containers 
   const distances: Record<string, number> = {};
   const previous: Record<string, string | null> = {};
   const steps: TraversalLogEntry[] = [];
@@ -24,6 +29,7 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
   });
   distances[startId] = 0;
 
+  // Main loop: Extract closest unvisited node from priority queue and process neighbors
   while (pq.length > 0) {
     pq.sort((a, b) => a[1] - b[1]);
     const [current] = pq.shift()!;
@@ -33,6 +39,7 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
     visited.add(current);
     traversal.push(current);
 
+    // Get neighbors and update distances if a shorter path is found 
     const neighbors = graph.edges
       .filter(e => e.node1 === current || (!graph.isDirected && e.node2 === current))
       .map(e => ({
@@ -50,6 +57,7 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
       }
     }
 
+    // Annotate current step with distances and priority queue state 
     const nodeAnnotations: Record<string, string> = {};
     for (const node of graph.nodes) {
       if (distances[node.id] === Infinity) {
@@ -68,6 +76,7 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
     });
   }
 
+  // Final result: return traversal path, distance map, and step logs for visualization 
   return {
     traversal,
     log: distances,

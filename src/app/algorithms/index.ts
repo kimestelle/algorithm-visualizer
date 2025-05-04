@@ -3,6 +3,10 @@ import { runBFS } from "./bfs";
 import { runDijkstra } from "./dijkstra"; 
 import { GraphData, TraversalResult } from "../types";
 
+// Algorithm Registry:
+// Maps algorithm names to their execution logic and descriptions.
+// Used to dynamically trigger graph traversal algorithms and display UI help text.
+
 export type TraversalFunction = (graph: GraphData, startId: string) => TraversalResult;
 
 export type AlgorithmEntry = {

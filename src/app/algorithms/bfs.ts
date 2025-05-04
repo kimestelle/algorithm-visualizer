@@ -1,11 +1,16 @@
 import { GraphData, TraversalLogEntry, TraversalResult } from "../types";
 
+// Breadth-First Search (BFS):
+// Traverses the graph level-by-level starting from a source node.
+// Returns traversal order, step-by-step log, and node annotations for visualization.
 export function runBFS(graph: GraphData, startId?: string): TraversalResult {
+  // Input validation: check if the graph is unweighted and if the start node is valid
   if (graph.isWeighted) throw new Error("BFS does not run on a weighted graph");
   if (!startId || !graph.nodes.some(n => n.id === startId)) {
     throw new Error("Invalid or missing start node");
   }
 
+   // Initialization of data structures
   const discovered = new Map<string, boolean>();
   const parent = new Map<string, string | null>();
   const result: string[] = [];
@@ -15,7 +20,7 @@ export function runBFS(graph: GraphData, startId?: string): TraversalResult {
   const nodeAnnotations: Record<string, string> = {};
 
   
-  // Initialize discovered and parent for all vertices
+  // Mark all nodes undiscovered and without parent
   for (const { id } of graph.nodes) {
     discovered.set(id, false);
     parent.set(id, null);

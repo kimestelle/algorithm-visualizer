@@ -3,6 +3,12 @@
 import * as d3 from 'd3';
 import { useEffect, useRef } from 'react';
 
+
+// === ForceGraph Component ===
+// Renders an interactive, force-directed graph that supports node dragging, edge editing,
+// arrow rendering for directed graphs, edge weight editing for weighted graphs, and animation updates
+// for traversal steps with live annotation and highlighting.
+
 interface NodeType {
   id: string;
   fx?: number | null;
@@ -65,7 +71,7 @@ export default function ForceGraph({
     const width = 600;
     const height = 400;
 
-    // Only clear and re-render if graph structure or settings change
+    // Initial Render: Simulation and Element Binding 
     if (!simulationRef.current) {
       d3.select(svgRef.current).selectAll('*').remove();
 
@@ -79,6 +85,8 @@ export default function ForceGraph({
         .force('center', d3.forceCenter(width / 2, height / 2));
       simulationRef.current = simulation;
 
+      // Link Rendering & Interactions:
+      // Draws edges and enables editing via click interactions
       const linkGroup = svg.append('g')
         .attr('stroke', '#aaa')
         .attr('id', 'links');
@@ -92,6 +100,9 @@ export default function ForceGraph({
           return Math.max(2, Math.min(10, weight));
         })
         .on('click', (event, d) => {
+           // Edge Click Handler:
+          // Allows weight editing or deletion depending on graph type
+
           if (isRunningAlgorithm) {
             setErrorMessage('Cannot edit edges while an algorithm is running.');
             return;
@@ -138,6 +149,7 @@ export default function ForceGraph({
             }
           }
 
+           // Temporary highlight on interaction
           d3.select(event.currentTarget)
             .transition()
             .duration(300)
@@ -147,6 +159,7 @@ export default function ForceGraph({
             .attr('stroke', '#aaa');
         });
 
+      // Directed Graph Arrow Marker Setup:
       if (isDirected) {
         svg.append("defs").selectAll("marker")
           .data(["end"])
@@ -166,6 +179,7 @@ export default function ForceGraph({
         link.attr("marker-end", "url(#arrow)");
       }
 
+      // Node Rendering & Drag Interaction
       const nodeGroup = svg.append<SVGGElement>('g')
         .attr('id', 'nodes');
 
@@ -192,6 +206,8 @@ export default function ForceGraph({
           })
         )
         .on('click', (event, d) => {
+          //Node Click Handler:
+          // Allows node renaming via prompt
           if (isRunningAlgorithm) {
             setErrorMessage('Cannot edit nodes while an algorithm is running.');
             return;
@@ -220,6 +236,8 @@ export default function ForceGraph({
             .attr('stroke-width', 0);
         });
 
+      // Label Rendering:
+      // Renders static node and edge labels
       const text = svg.append<SVGGElement>('g')
         .attr('id', 'node-labels')
         .selectAll<SVGTextElement, NodeType>('text')
@@ -240,6 +258,8 @@ export default function ForceGraph({
 
       const nodeRadius = 15;
 
+      // Simulation Tick Update:
+      // Updates node/edge positions and label placement on each tick
       simulation.on('tick', () => {
         link
           .attr('x1', (d: SimLink) => typeof d.source === 'object' ? d.source.x ?? 0 : 0)
@@ -275,6 +295,8 @@ export default function ForceGraph({
           .text(d => isWeighted && d.weight != null ? `${d.weight}` : "");
       });
     } else {
+      // Graph Update Only (No Full Re-render):
+      // Updates only data-bound attributes when props change
       simulationRef.current.nodes(nodes);
       if (simulationRef.current) {
         (simulationRef.current?.force('link') as d3.ForceLink<NodeType, LinkType>)?.links(edges);
@@ -330,6 +352,9 @@ export default function ForceGraph({
     };
   }, [nodes, edges, isDirected, isWeighted, isWeightedGraph, setNodes, setEdges, setErrorMessage]);
 
+
+  // Traversal Highlight Update:
+  // Animates color and label updates as algorithm progresses
   useEffect(() => {
     if (!svgRef.current || !highlightedNodes) return;
 

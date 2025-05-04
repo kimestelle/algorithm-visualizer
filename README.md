@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Graph Algorithm Visualizer
 
-## Getting Started
+## Project Overview
 
-First, run the development server:
+Graph Algorithm Visualizer is a browser-based interactive tool that enables users to construct graphs and visualize classical traversal algorithms. Users can toggle between directed/undirected and weighted/unweighted modes and add/delete nodes and edges dynamically. The application supports step-by-step visualization for Depth-First Search (DFS), Breadth-First Search (BFS), and Dijkstra’s algorithm, providing logs and annotated nodes to help understand traversal behavior. This tool is designed to enhance intuition around graph algorithms through visual interactivity.
+
+## Project Category
+
+Code Implementation
+
+This project falls under the Code Implementation category. We implemented graph algorithms from scratch, integrated them with a force-directed graph visualizer using D3.js, and created an interactive frontend using React and TypeScript.
+
+## Work Breakdown
+
+Bailey  
+- Implemented BFS and Dijkstra’s algorithm  
+- Improved UI/UX for consistency across the app  
+- Refactored DFS logic to align with what was taught in class
+
+Estelle  
+- Set up the initial UI/UX layout and component structure  
+- Implemented the initial version of the DFS algorithm  
+- Built the algorithm selection and setup panel
+
+## How to Run
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open your browser and go to:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Features
 
-## Learn More
+- Add and delete nodes and edges from the graph
+- Toggle between directed/undirected and weighted/unweighted graphs
+- Select and run DFS, BFS, or Dijkstra's algorithm
+- Visualize traversal step-by-step with logs and annotations
+- Edit node labels and edge weights interactively
 
-To learn more about Next.js, take a look at the following resources:
+## Screenshots
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+(Add screenshots showing:  
+- the graph setup panel  
+- algorithm selection panel  
+- traversal visualization in progress)

@@ -1,3 +1,7 @@
+// Graph Types & Traversal Logging:
+// Defines interfaces for representing graph structure (nodes, edges, metadata)
+// and for capturing step-by-step traversal logs used in visualization and algorithms.
+
 export interface GraphNode {
     id: string;
   }
