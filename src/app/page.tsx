@@ -1,4 +1,6 @@
+// 'use client' ensures the component is rendered on the client side in Next.js
 'use client'
+
 import ForceGraph from './components/ForceGraph';
 import { algorithmMap } from './algorithms';
 import { GraphData } from './types';
@@ -7,7 +9,7 @@ import { useState, useMemo, useEffect } from "react";
 export default function Home() {
   // Manages Graph State: 
   // Handles node list, edge list, and graph type toggles (directed/weighted)
-  const [nodes, setNodes] = useState<string[]>(["A", "B", "C", "D", "E"]); // Initial graph nodes
+  const [nodes, setNodes] = useState<string[]>(["A", "B", "C", "D", "E"]);
   const [edges, setEdges] = useState<{ node1: string; node2: string; weight?: number }[]>([
     { node1: "A", node2: "B", weight: 1 },
     { node1: "A", node2: "C", weight: 1 },
@@ -18,7 +20,6 @@ export default function Home() {
   const [isDirected, setIsDirected] = useState(false); 
   const [isWeighted, setIsWeighted] = useState(false);
 
-  
   // Graph Visualization & Interaction Management:
   // Highlighted nodes during traversal, selected node for algorithm, full log of steps, 
   // selected algorithm, node annotations, error message, and running stat
@@ -57,7 +58,6 @@ export default function Home() {
       weight,
     }));
   }, [edges, memoizedNodes]);
-
 
   // Graph Reset:
   // Clears all graph data and resets UI state
@@ -136,61 +136,99 @@ export default function Home() {
     }
   }
 
+  // Ensure new nodes are visible by resetting camera zoom and position in ForceGraph
+  useEffect(() => {
+    const graphCanvas: any = document.querySelector('canvas');
+    if (graphCanvas && typeof graphCanvas.__zoomToFit === 'function') {
+      graphCanvas.__zoomToFit(); // Custom method exposed in ForceGraph to fit nodes
+    }
+  }, [nodes.length]);
+
   // UI Rendering Section
   return (
     <main className="w-full h-full flex flex-col md:flex-row font-sans text-[15px] bg-gradient-to-br from-white via-gray-100 to-slate-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-950 text-gray-900 dark:text-gray-100">
       <div id='graph-setup' className="flex-1 p-4 bg-white/90 dark:bg-gray-800/90 flex flex-col gap-3 rounded-lg shadow-xl">
         <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-300">Graph Setup</h1>
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className="font-semibold">Direction:</span>
-          <label className="flex items-center gap-1"><input type="radio" name="graph-direction" checked={!isDirected} onChange={() => setIsDirected(false)} className="accent-indigo-500" /> Undirected</label>
-          <label className="flex items-center gap-1"><input type="radio" name="graph-direction" checked={isDirected} onChange={() => setIsDirected(true)} className="accent-indigo-500" /> Directed</label>
-          <span className="ml-4 font-semibold">Weight:</span>
-          <label className="flex items-center gap-1"><input type="radio" name="graph-weight" checked={!isWeighted} onChange={() => setIsWeighted(false)} className="accent-indigo-500" /> Unweighted</label>
-          <label className="flex items-center gap-1"><input type="radio" name="graph-weight" checked={isWeighted} onChange={() => setIsWeighted(true)} className="accent-indigo-500" /> Weighted</label>
+
+        <div className="flex gap-3 text-sm flex-wrap">
+          <label><input type="radio" checked={!isDirected} onChange={() => setIsDirected(false)} className="accent-indigo-500" /> Undirected</label>
+          <label><input type="radio" checked={isDirected} onChange={() => setIsDirected(true)} className="accent-indigo-500" /> Directed</label>
+          <label><input type="radio" checked={!isWeighted} onChange={() => setIsWeighted(false)} className="accent-indigo-500 ml-6" /> Unweighted</label>
+          <label><input type="radio" checked={isWeighted} onChange={() => setIsWeighted(true)} className="accent-indigo-500" /> Weighted</label>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-          <div className="flex flex-1 gap-2 items-center">
-            <button className="whitespace-nowrap bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded-md text-xs">Add Node</button>
-            <input type="text" placeholder="New node ID" id="new-node-id" className="p-1 border rounded text-xs bg-white dark:bg-gray-700 w-full" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => {
+                const input = document.getElementById("new-node-id") as HTMLInputElement;
+                const val = input.value.trim();
+                if (val && !nodes.includes(val)) {
+                  setNodes([...nodes, val]);
+                  input.value = '';
+                }
+              }}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded-md text-xs whitespace-nowrap"
+            >
+              Add Node
+            </button>
+            <input
+              type="text"
+              id="new-node-id"
+              placeholder="New node ID"
+              className="flex-grow p-1 border rounded text-xs w-0 min-w-0 bg-white dark:bg-gray-700"
+            />
           </div>
 
-          <div className="flex flex-wrap gap-2 items-center">
-            <button className="whitespace-nowrap bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded-md text-xs">Add Edge</button>
-            <select id="edge-node1" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
-              {nodes.map(n => <option key={n}>{n}</option>)}
-            </select>
+          <div className="flex gap-2 flex-wrap items-center">
+            <button
+              onClick={() => {
+                const n1 = (document.getElementById("edge-node1") as HTMLSelectElement).value;
+                const n2 = (document.getElementById("edge-node2") as HTMLSelectElement).value;
+                const weight = isWeighted ? Number((document.getElementById("edge-weight") as HTMLInputElement).value) : undefined;
+                if (n1 && n2 && n1 !== n2) {
+                  setEdges([...edges, { node1: n1, node2: n2, weight }]);
+                }
+              }}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1 rounded-md text-xs"
+            >Add Edge</button>
+            <select id="edge-node1" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">{nodes.map(n => <option key={n}>{n}</option>)}</select>
             →
-            <select id="edge-node2" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
-              {nodes.map(n => <option key={n}>{n}</option>)}
-            </select>
+            <select id="edge-node2" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">{nodes.map(n => <option key={n}>{n}</option>)}</select>
             {isWeighted && (
-              <input id="edge-weight" type="number" placeholder="Weight" defaultValue="1" className="p-1 border rounded text-xs w-16 bg-white dark:bg-gray-700" />
+              <input id="edge-weight" type="number" defaultValue="1" className="p-1 border rounded text-xs w-16 bg-white dark:bg-gray-700" />
             )}
           </div>
 
           <div className="flex gap-2 items-center">
-            <button className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-md text-xs">Delete Node</button>
-            <select id="delete-node-id" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
-              {nodes.map(n => <option key={n}>{n}</option>)}
-            </select>
+            <button
+              onClick={() => {
+                const val = (document.getElementById("delete-node-id") as HTMLSelectElement).value;
+                setNodes(nodes.filter(n => n !== val));
+                setEdges(edges.filter(e => e.node1 !== val && e.node2 !== val));
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-md text-xs"
+            >Delete Node</button>
+            <select id="delete-node-id" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">{nodes.map(n => <option key={n}>{n}</option>)}</select>
           </div>
 
           <div className="flex gap-2 items-center">
-            <button className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-md text-xs">Delete Edge</button>
-            <select id="delete-edge-node1" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
-              {nodes.map(n => <option key={n}>{n}</option>)}
-            </select>
+            <button
+              onClick={() => {
+                const n1 = (document.getElementById("delete-edge-node1") as HTMLSelectElement).value;
+                const n2 = (document.getElementById("delete-edge-node2") as HTMLSelectElement).value;
+                setEdges(edges.filter(e => !(e.node1 === n1 && e.node2 === n2) && !(e.node1 === n2 && e.node2 === n1)));
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-md text-xs"
+            >Delete Edge</button>
+            <select id="delete-edge-node1" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">{nodes.map(n => <option key={n}>{n}</option>)}</select>
             →
-            <select id="delete-edge-node2" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">
-              {nodes.map(n => <option key={n}>{n}</option>)}
-            </select>
+            <select id="delete-edge-node2" className="p-1 border rounded text-xs bg-white dark:bg-gray-700">{nodes.map(n => <option key={n}>{n}</option>)}</select>
           </div>
+        </div>
 
-          <div className="sm:col-span-2 flex justify-start">
-            <button onClick={clearGraph} className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded-md text-xs font-medium">Clear Graph</button>
-          </div>
+        <div className="mt-2">
+          <button onClick={clearGraph} className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded-md text-xs font-medium">Clear Graph</button>
         </div>
 
         <ForceGraph
