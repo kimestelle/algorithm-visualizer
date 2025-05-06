@@ -4,35 +4,35 @@ import * as d3 from 'd3';
 import { useEffect, useRef } from 'react';
 
 
-// === ForceGraph Component ===
-// Renders an interactive, force-directed graph that supports node dragging, edge editing,
-// arrow rendering for directed graphs, edge weight editing for weighted graphs, and animation updates
-// for traversal steps with live annotation and highlighting.
+// ForceGraph Component
+// Renders an interactive force-directed graph:
+// - Supports dragging nodes, editing edges/nodes, directed arrows, and weight labels
+// - Animates traversal steps by updating node highlights and annotations
 
 interface NodeType {
   id: string;
-  fx?: number | null;
-  fy?: number | null;
-  x?: number;
-  y?: number;
+  fx?: number | null; // fixed x during drag
+  fy?: number | null; // fixed y during drag
+  x?: number;  // current x-position
+  y?: number; // current y-position
 }
 
 interface LinkType {
   source: string;
   target: string;
-  weight?: number;
+  weight?: number; // weight for weighted graphs
 }
 
 interface ForceGraphProps {
-  nodes: NodeType[];
-  edges: LinkType[];
-  isDirected: boolean;
-  isWeighted: boolean;
-  highlightedNodes?: string[];
-  nodeAnnotations?: Record<string, string>;
+  nodes: NodeType[]; // Array of nodes
+  edges: LinkType[]; // Array of edges
+  isDirected: boolean; // Flag for directed graph
+  isWeighted: boolean; // Flag for weighted graph
+  highlightedNodes?: string[];  // nodes colored during traversal
+  nodeAnnotations?: Record<string, string>; // labels like visit order
   setNodes: React.Dispatch<React.SetStateAction<string[]>>;
   setEdges: React.Dispatch<React.SetStateAction<{ node1: string; node2: string; weight?: number }[]>>;
-  isWeightedGraph: boolean;
+  isWeightedGraph: boolean;  // alias for isWeighted
   isRunningAlgorithm: boolean;
   setErrorMessage: React.Dispatch<React.SetStateAction<string>>;
 }
@@ -79,6 +79,7 @@ export default function ForceGraph({
         .attr('width', width)
         .attr('height', height);
 
+       // Setup force simulation with link, charge, and center forces
       const simulation = d3.forceSimulation(nodes)
         .force('link', d3.forceLink<NodeType, LinkType>(edges).id((d: NodeType) => d.id).distance(120))
         .force('charge', d3.forceManyBody().strength(-400))
@@ -107,10 +108,9 @@ export default function ForceGraph({
             setErrorMessage('Cannot edit edges while an algorithm is running.');
             return;
           }
-
           const sourceId = typeof d.source === 'object' ? (d.source as SimNode).id : d.source;
           const targetId = typeof d.target === 'object' ? (d.target as SimNode).id : d.target;
-
+          // Weighted: prompt for new weight or delete
           if (isWeightedGraph) {
             const action = prompt('Enter new edge weight or type "delete" to remove the edge:', d.weight?.toString() || '1');
             if (action !== null) {
@@ -206,6 +206,7 @@ export default function ForceGraph({
           })
         )
         .on('click', (event, d) => {
+         
           //Node Click Handler:
           // Allows node renaming via prompt
           if (isRunningAlgorithm) {
@@ -213,6 +214,7 @@ export default function ForceGraph({
             return;
           }
 
+          // Labels for nodes and edges
           const newLabel = prompt('Enter new node label:', d.id);
           if (newLabel !== null && newLabel.trim() && !nodes.some(n => n.id === newLabel.trim())) {
             setNodes(prev => prev.map(id => id === d.id ? newLabel.trim() : id));
@@ -236,8 +238,6 @@ export default function ForceGraph({
             .attr('stroke-width', 0);
         });
 
-      // Label Rendering:
-      // Renders static node and edge labels
       const text = svg.append<SVGGElement>('g')
         .attr('id', 'node-labels')
         .selectAll<SVGTextElement, NodeType>('text')
@@ -359,13 +359,13 @@ export default function ForceGraph({
     if (!svgRef.current || !highlightedNodes) return;
 
     const svg = d3.select(svgRef.current);
-
+    // Color nodes based on highlight array
     svg.select("#nodes")
       .selectAll<SVGCircleElement, NodeType>("circle")
       .transition()
       .duration(300)
       .attr("fill", d => highlightedNodes.includes(d.id) ? "#4caf50" : "#ef5350");
-
+    // Update labels with new annotations
     svg.select("#node-labels")
       .selectAll<SVGTextElement, NodeType>("text")
       .text(d => {

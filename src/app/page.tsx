@@ -6,10 +6,11 @@ import { algorithmMap } from './algorithms';
 import { GraphData } from './types';
 import { useState, useMemo, useEffect } from "react";
 
+// Main page component for graph visualization and algorithm control
 export default function Home() {
-  // Manages Graph State: 
+  // Graph State Setup:
   // Handles node list, edge list, and graph type toggles (directed/weighted)
-  const [nodes, setNodes] = useState<string[]>(["A", "B", "C", "D", "E"]);
+  const [nodes, setNodes] = useState<string[]>(["A", "B", "C", "D", "E"]);  // node identifiers
   const [edges, setEdges] = useState<{ node1: string; node2: string; weight?: number }[]>([
     { node1: "A", node2: "B", weight: 1 },
     { node1: "A", node2: "C", weight: 1 },
@@ -17,18 +18,16 @@ export default function Home() {
     { node1: "C", node2: "E", weight: 1 },
     { node1: "D", node2: "E", weight: 1 },
   ]);
-  const [isDirected, setIsDirected] = useState(false); 
-  const [isWeighted, setIsWeighted] = useState(false);
+  const [isDirected, setIsDirected] = useState(false); // toggle directed vs undirected
+  const [isWeighted, setIsWeighted] = useState(false); // toggle weight display
 
-  // Graph Visualization & Interaction Management:
-  // Highlighted nodes during traversal, selected node for algorithm, full log of steps, 
-  // selected algorithm, node annotations, error message, and running stat
-  const [highlightedNodes, setHighlightedNodes] = useState<string[]>([]); 
-  const [selectedNode, setSelectedNode] = useState<string>(nodes[0]); 
-  const [fullLog, setFullLog] = useState<string>(''); 
-  const [selectedAlgo, setSelectedAlgo] = useState<keyof typeof algorithmMap>(""); 
-  const [nodeAnnotations, setNodeAnnotations] = useState<Record<string, string>>({}); 
-  const [errorMessage, setErrorMessage] = useState<string>(''); 
+  // Algorithm and UI State Setup
+  const [highlightedNodes, setHighlightedNodes] = useState<string[]>([]);  // nodes colored during traversal
+  const [selectedNode, setSelectedNode] = useState<string>(nodes[0]); // start node 
+  const [fullLog, setFullLog] = useState<string>(''); // log text
+  const [selectedAlgo, setSelectedAlgo] = useState<keyof typeof algorithmMap>("");  // current algorithm
+  const [nodeAnnotations, setNodeAnnotations] = useState<Record<string, string>>({}); // node labels
+  const [errorMessage, setErrorMessage] = useState<string>(''); // display error messages
   const [isRunningAlgorithm, setIsRunningAlgorithm] = useState<boolean>(false); 
 
   // Edge Weight Normalization: 
@@ -117,7 +116,7 @@ export default function Home() {
         index++;
       }, 500);
     } catch (err) {
-      // Handle algorithm-specific and validation errors
+      // Handle algorithm and validation errors
       const message = err instanceof Error ? err.message : "An unexpected error occurred.";
       let userFriendlyMessage = message;
 
@@ -147,16 +146,15 @@ export default function Home() {
   // UI Rendering Section
   return (
     <main className="w-full h-full flex flex-col md:flex-row font-sans text-[15px] bg-gradient-to-br from-white via-gray-100 to-slate-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-950 text-gray-900 dark:text-gray-100">
+      {/* Graph setup panel */}
       <div id='graph-setup' className="flex-1 p-4 bg-white/90 dark:bg-gray-800/90 flex flex-col gap-3 rounded-lg shadow-xl">
         <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-300">Graph Setup</h1>
-
         <div className="flex gap-3 text-sm flex-wrap">
           <label><input type="radio" checked={!isDirected} onChange={() => setIsDirected(false)} className="accent-indigo-500" /> Undirected</label>
           <label><input type="radio" checked={isDirected} onChange={() => setIsDirected(true)} className="accent-indigo-500" /> Directed</label>
           <label><input type="radio" checked={!isWeighted} onChange={() => setIsWeighted(false)} className="accent-indigo-500 ml-6" /> Unweighted</label>
           <label><input type="radio" checked={isWeighted} onChange={() => setIsWeighted(true)} className="accent-indigo-500" /> Weighted</label>
         </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex gap-2 items-center">
             <button
@@ -230,7 +228,7 @@ export default function Home() {
         <div className="mt-2">
           <button onClick={clearGraph} className="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded-md text-xs font-medium">Clear Graph</button>
         </div>
-
+        {/* Directed/Weighted toggles, node/edge add/delete controls */}
         <ForceGraph
           nodes={memoizedNodes}
           edges={memoizedEdges}
@@ -245,8 +243,7 @@ export default function Home() {
           setErrorMessage={setErrorMessage}
         />
       </div>
-
-      {/* Algorithm Setup */}
+      {/* Algorithm Setup Panel */}
       <div id='algorithm-setup' className="flex-1 p-4 bg-white/90 dark:bg-gray-800/90 flex flex-col gap-3 rounded-lg shadow-xl">
         <h1 className="text-3xl font-bold text-purple-700 dark:text-purple-300">Algorithm Setup</h1>
         <p className="text-xs text-gray-600 dark:text-gray-400">Select an algorithm to visualize the graph traversal.</p>
@@ -256,7 +253,7 @@ export default function Home() {
             {errorMessage}
           </div>
         )}
-
+        {/* Start node selector and algorithm buttons, description, and log */}
         <div className='flex flex-row gap-2 items-center'>
           <p className="font-semibold text-xs">Starting Node:</p>
           <select className="p-1 border rounded text-xs bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600" value={selectedNode} onChange={(e) => setSelectedNode(e.target.value)}>

@@ -1,26 +1,34 @@
 import { GraphData, TraversalLogEntry, TraversalResult } from "../types";
 
-// Depth-First Search (DFS):
-// Explores as far as possible along each branch before backtracking. 
-// Returns traversal order, log, and per-step annotations for visualization.
+// Performs Depth-First Search on an unweighted graph.
+// Returns:
+// - traversal: array of visited node IDs in DFS order
+// - log: maps each node ID to its position in the traversal
+// - steps: detailed state at each iteration for visualization
+// - display: human-readable step descriptions joined by newlines
+// - nodeAnnotations: labels for nodes showing visit sequence
 export function runDFS(graph: GraphData, startId?: string): TraversalResult {
+  // Ensure graph is suitable for DFS
   if (graph.isWeighted) throw new Error("DFS does not run on a weighted graph");
 
-  const visited    = new Set<string>();
-  const result     : string[] = [];
-  const log        : Record<string, number> = {};
-  const steps      : TraversalLogEntry[] = [];
-  const fullDisplay: string[] = [];
-  const nodeAnnotations: Record<string, string> = {};
+  // Data structures for DFS
+  const visited    = new Set<string>(); // tracks visited nodes
+  const result     : string[] = []; // DFS visitation order
+  const log        : Record<string, number> = {};  // maps node ID to its index
+  const steps      : TraversalLogEntry[] = []; // logs step for visualization
+  const fullDisplay: string[] = []; // step descriptions for UI
+  const nodeAnnotations: Record<string, string> = {}; // labels showing visit number
 
   //  DFS Traversal for a connected component 
   function processComponent(initial: string) {
     const stack = [initial];
 
+    // while stack is not empty, pop a node and process if not visited
     while (stack.length > 0) {
-      const node = stack.pop()!;
+      const node = stack.pop()!;  
       if (visited.has(node)) continue;
-
+      
+      // Mark node as visited
       visited.add(node);
       log[node] = result.length;
       result.push(node);
@@ -31,6 +39,7 @@ export function runDFS(graph: GraphData, startId?: string): TraversalResult {
       const structure   = [...stack];
       const stepDisplay = `Current: ${node} | Stack: ${structure.join(' → ')} | Visited: ${visitedList.join(', ')}`;
 
+      // Add unvisited neighbors onto stack (reverse order to maintain DFS sequence)
       steps.push({
         current: node,
         visited: visitedList,
@@ -57,13 +66,14 @@ export function runDFS(graph: GraphData, startId?: string): TraversalResult {
     processComponent(startId);
   }
 
-  // Catch any disconnected components
+  // Cover any disconnected components
   for (const { id } of graph.nodes) {
     if (!visited.has(id)) {
       processComponent(id);
     }
   }
 
+  // Return the complete DFS traversal result
   return {
     traversal     : result,
     log,

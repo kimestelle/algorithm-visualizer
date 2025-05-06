@@ -8,11 +8,14 @@ import { GraphData, TraversalResult } from "../types";
 // Used to dynamically trigger graph traversal algorithms and display UI help text.
 export type TraversalFunction = (graph: GraphData, startId: string) => TraversalResult;
 
+// Structure for storing each algorithm's runner and help text
 export type AlgorithmEntry = {
   run: TraversalFunction;
   description: string;
 };
 
+// Registry of supported graph algorithms
+// Keys correspond to user-selectable algorithm names in the UI
 export const algorithmMap: Record<string, AlgorithmEntry> = {
   dfs: {
     run: runDFS,

@@ -1,8 +1,11 @@
 import { GraphData, TraversalLogEntry, TraversalResult } from "../types";
 
-// Dijkstra's Algorithm:
-// Computes shortest paths from a start node to all others in a weighted graph with non-negative edge weights.
-// Returns a traversal log with step-by-step details for visualization.
+// Performs Dijkstra's algorithm on a weighted graph with non-negative edges.
+// Returns:
+// - traversal: array of nodes in the order they are finalized
+// - log: final distances from start to each node
+// - steps: detailed logs for each iteration (current node, visited set, PQ state, annotations)
+// - nodeAnnotations: final distance labels for visualization
 export function runDijkstra(graph: GraphData, startId?: string): TraversalResult {
   // Input validation: check if the graph is weighted and if the start node is valid
   if (!startId || !graph.nodes.some(n => n.id === startId)) {
@@ -15,13 +18,13 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
     throw new Error("Dijkstra's algorithm does not support negative weights");
   }
 
-  // Initialize data structures: distances, previous node map, priority queue, and result containers 
+  // Initialize data structures
   const distances: Record<string, number> = {};
   const previous: Record<string, string | null> = {};
   const steps: TraversalLogEntry[] = [];
-  const visited: Set<string> = new Set();
-  const traversal: string[] = [];
-  const pq: [string, number][] = [[startId, 0]];
+  const visited: Set<string> = new Set(); // finalized nodes
+  const traversal: string[] = []; // order of finalization
+  const pq: [string, number][] = [[startId, 0]]; // min-heap simulated by sort
 
   graph.nodes.forEach(node => {
     distances[node.id] = Infinity;
@@ -31,15 +34,17 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
 
   // Main loop: Extract closest unvisited node from priority queue and process neighbors
   while (pq.length > 0) {
+    // Extract node with smallest distance
     pq.sort((a, b) => a[1] - b[1]);
     const [current] = pq.shift()!;
 
+    // Skip if already finalized
     if (visited.has(current)) continue;
 
     visited.add(current);
     traversal.push(current);
 
-    // Get neighbors and update distances if a shorter path is found 
+    // Relax edges: update neighbor distances if shorter path found
     const neighbors = graph.edges
       .filter(e => e.node1 === current || (!graph.isDirected && e.node2 === current))
       .map(e => ({
@@ -57,7 +62,7 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
       }
     }
 
-    // Annotate current step with distances and priority queue state 
+     // Log current state: distances and PQ contents
     const nodeAnnotations: Record<string, string> = {};
     for (const node of graph.nodes) {
       if (distances[node.id] === Infinity) {
@@ -76,7 +81,7 @@ export function runDijkstra(graph: GraphData, startId?: string): TraversalResult
     });
   }
 
-  // Final result: return traversal path, distance map, and step logs for visualization 
+   // Return results with final distances as log and annotations
   return {
     traversal,
     log: distances,
