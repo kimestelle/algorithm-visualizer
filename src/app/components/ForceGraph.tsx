@@ -350,7 +350,19 @@ export default function ForceGraph({
         simulationRef.current = null;
       }
     };
-  }, [nodes, edges, isDirected, isWeighted, isWeightedGraph, setNodes, setEdges, setErrorMessage]);
+  }, [
+    nodes,
+    edges,
+    isDirected,
+    isWeighted,
+    isWeightedGraph,
+    highlightedNodes,
+    nodeAnnotations,
+    isRunningAlgorithm,
+    setNodes,
+    setEdges,
+    setErrorMessage
+  ]);
 
 
   // Traversal Highlight Update:

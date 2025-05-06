@@ -6,6 +6,10 @@ import { algorithmMap } from './algorithms';
 import { GraphData } from './types';
 import { useState, useMemo, useEffect } from "react";
 
+interface ZoomableCanvas extends HTMLCanvasElement {
+  __zoomToFit(): void;
+}
+
 // Main page component for graph visualization and algorithm control
 export default function Home() {
   // Graph State Setup:
@@ -137,9 +141,9 @@ export default function Home() {
 
   // Ensure new nodes are visible by resetting camera zoom and position in ForceGraph
   useEffect(() => {
-    const graphCanvas: any = document.querySelector('canvas');
-    if (graphCanvas && typeof graphCanvas.__zoomToFit === 'function') {
-      graphCanvas.__zoomToFit(); // Custom method exposed in ForceGraph to fit nodes
+    const graphCanvas = document.querySelector('canvas') as ZoomableCanvas | null;
+    if (graphCanvas) {
+      graphCanvas.__zoomToFit();
     }
   }, [nodes.length]);
 
