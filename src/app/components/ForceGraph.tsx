@@ -256,7 +256,7 @@ export default function ForceGraph({
         .attr("font-size", 12)
         .attr("fill", "#444");
 
-      const nodeRadius = 15;
+      const nodeRadius = 30;
 
       // Simulation Tick Update:
       // Updates node/edge positions and label placement on each tick
@@ -269,11 +269,11 @@ export default function ForceGraph({
 
         node
           .attr('cx', d => {
-            d.x = Math.max(nodeRadius, Math.min(width - nodeRadius * 2, d.x!));
+            d.x = Math.max(nodeRadius, Math.min(width - nodeRadius, d.x!));
             return d.x!;
           })
           .attr('cy', d => {
-            d.y = Math.max(nodeRadius, Math.min(height - nodeRadius * 2, d.y!));
+            d.y = Math.max(nodeRadius, Math.min(height - nodeRadius, d.y!));
             return d.y!;
           });
 
