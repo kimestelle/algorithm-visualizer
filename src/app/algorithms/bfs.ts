@@ -10,8 +10,8 @@ import { GraphData, TraversalLogEntry, TraversalResult } from "../types";
 export function runBFS(graph: GraphData, startId?: string): TraversalResult {
   // Input validation: check if the graph is unweighted and if the start node is valid
   if (graph.isWeighted) throw new Error("BFS does not run on a weighted graph");
-  if (!startId || !graph.nodes.some(n => n.id === startId)) {
-    throw new Error("Invalid or missing start node");
+  if (startId && !graph.nodes.some(n => n.id === startId)) {
+    throw new Error("Invalid start node");
   }
 
   // Data structures for BFS
@@ -23,53 +23,68 @@ export function runBFS(graph: GraphData, startId?: string): TraversalResult {
   const fullDisplay: string[] = [];  // step descriptions for UI
   const nodeAnnotations: Record<string, string> = {}; // labels showing visit order
 
-  
   // Mark all nodes undiscovered and without parent
   for (const { id } of graph.nodes) {
     discovered.set(id, false);
     parent.set(id, null);
   }
 
-  // Start BFS from the source node
-  const queue: string[] = [];
-  queue.push(startId);
-  discovered.set(startId, true);
-  result.push(startId);
-  log[startId] = 0;
-  nodeAnnotations[startId] = "1";
+  // Helper BFS function to cover a connected component
+  function bfsFrom(source: string) {
+    // Start BFS from the source node
+    const queue: string[] = [];
+    queue.push(source);
+    discovered.set(source, true);
+    result.push(source);
+    // ← continue numbering from previous component
+    log[source] = result.length - 1;
+    nodeAnnotations[source] = String(result.length);
 
-  // Main BFS loop: process until queue is empty
-  while (queue.length > 0) {
-    const v = queue.shift()!;
+    // Main BFS loop: process until queue is empty
+    while (queue.length > 0) {
+      const v = queue.shift()!;
 
-    // Record current step
-    const visitedList = result;
-    const structure = [...queue];
-    const stepDisplay = `Current: ${v} | Queue: ${structure.join(' → ')} | Visited: ${visitedList.join(', ')}`;
+      // Record current step
+      const visitedList = [...result];
+      const structure = [...queue];
+      const stepDisplay = `Current: ${v} | Queue: ${structure.join(' → ')} | Visited: ${visitedList.join(', ')}`;
 
-    steps.push({
-      current: v,
-      visited: visitedList,
-      structure,
-      display: stepDisplay,
-      nodeAnnotations: { ...nodeAnnotations }
-    });
-    fullDisplay.push(stepDisplay);
+      steps.push({
+        current: v,
+        visited: visitedList,
+        structure,
+        display: stepDisplay,
+        nodeAnnotations: { ...nodeAnnotations }
+      });
+      fullDisplay.push(stepDisplay);
 
-    // Process all adjacent vertices
-    const neighbors = graph.edges
-      .filter(e => e.node1 === v || (!graph.isDirected && e.node2 === v))
-      .map(e => e.node1 === v ? e.node2 : e.node1);
+      // Process all adjacent vertices
+      const neighbors = graph.edges
+        .filter(e => e.node1 === v || (!graph.isDirected && e.node2 === v))
+        .map(e => e.node1 === v ? e.node2 : e.node1);
 
-    for (const u of neighbors) {
-      if (!discovered.get(u)) {
-        discovered.set(u, true);
-        queue.push(u);  // enqueue for future exploration
-        parent.set(u, v); // update parent pointer
-        result.push(u); // add to traversal order
-        log[u] = result.length - 1; // record visit index
-        nodeAnnotations[u] = String(result.length);
+      for (const u of neighbors) {
+        if (!discovered.get(u)) {
+          discovered.set(u, true);
+          queue.push(u);  // enqueue for future exploration
+          parent.set(u, v); // update parent pointer
+          result.push(u); // add to traversal order
+          log[u] = result.length - 1; // record visit index
+          nodeAnnotations[u] = String(result.length);
+        }
       }
+    }
+  }
+
+  // If a startId was provided, run BFS from it first
+  if (startId) {
+    bfsFrom(startId);
+  }
+
+  // Then iterate through all nodes to cover disconnected components
+  for (const { id } of graph.nodes) {
+    if (!discovered.get(id)) {
+      bfsFrom(id);
     }
   }
 
