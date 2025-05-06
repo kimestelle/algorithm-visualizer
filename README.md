@@ -1,5 +1,7 @@
 # Graph Algorithm Visualizer
 
+Deployed on webiste: algo-visualizer-olive-rho.vercel.app
+
 ## Project Overview
 
 Graph Algorithm Visualizer is a browser-based interactive tool that enables users to construct graphs and visualize classical traversal algorithms. Users can toggle between directed/undirected and weighted/unweighted modes and add/delete nodes and edges dynamically. The application supports step-by-step visualization for Depth-First Search (DFS), Breadth-First Search (BFS), and Dijkstra’s algorithm, providing logs and annotated nodes to help understand traversal behavior. This tool is designed to enhance intuition around graph algorithms through visual interactivity.
