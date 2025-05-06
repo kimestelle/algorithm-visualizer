@@ -1,6 +1,7 @@
 # Graph Algorithm Visualizer
 
-Deployed on webiste: algo-visualizer-olive-rho.vercel.app
+Deployed on website: [algo-visualizer-olive-rho.vercel.app](https://algo-visualizer-olive-rho.vercel.app)
+
 
 ## Project Overview
 
