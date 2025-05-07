@@ -64,12 +64,19 @@ export default function ForceGraph({
 }: ForceGraphProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const simulationRef = useRef<d3.Simulation<NodeType, LinkType> | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const widthRef = useRef(600);
+  const heightRef = useRef(400);
+
 
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const width = 600;
-    const height = 400;
+    //canvas dimensions
+    const width = svgRef.current.clientWidth;
+    const height = svgRef.current.clientHeight;
+    widthRef.current = width;
+    heightRef.current = height;
 
     // Initial Render: Simulation and Element Binding 
     if (!simulationRef.current) {
@@ -79,6 +86,37 @@ export default function ForceGraph({
         .attr('width', width)
         .attr('height', height);
 
+        const updateSize = () => {
+          const width = svgRef.current?.clientWidth || 600;
+          const height = svgRef.current?.clientHeight || 400;
+        
+          svg.attr('width', width).attr('height', height);
+        
+          if (simulationRef.current) {
+            simulationRef.current
+              .force('center', d3.forceCenter(width / 2, height / 2));
+        
+            // adjut node positions to fit new bounds when resizing canvas
+            const nodeRadius = 30;
+            simulationRef.current.nodes().forEach((d: NodeType) => {
+              const w = widthRef.current;
+              const h = heightRef.current;
+              d.x = Math.max(nodeRadius, Math.min(w - nodeRadius, d.x!));
+              d.y = Math.max(nodeRadius, Math.min(h - nodeRadius, d.y!));
+            });
+        
+            simulationRef.current.alpha(0.3).restart();
+          }
+        };
+        
+        updateSize();
+
+
+        resizeObserverRef.current = new ResizeObserver(() => {
+          updateSize(); // update dimensions and center
+        });
+        resizeObserverRef.current.observe(svgRef.current!);
+        
        // Setup force simulation with link, charge, and center forces
       const simulation = d3.forceSimulation(nodes)
         .force('link', d3.forceLink<NodeType, LinkType>(edges).id((d: NodeType) => d.id).distance(120))
@@ -345,6 +383,8 @@ export default function ForceGraph({
     }
 
     return () => {
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;   
       if (simulationRef.current) {
         simulationRef.current.stop();
         simulationRef.current = null;
@@ -387,5 +427,5 @@ export default function ForceGraph({
       });
   }, [highlightedNodes, nodeAnnotations]);
 
-  return <svg ref={svgRef} className="rounded border w-full max-w-[800px]" />;
+  return <svg ref={svgRef} className="rounded border w-full h-[400px] max-w-[800px]" />;
 }
