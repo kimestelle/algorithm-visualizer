@@ -70,3 +70,4 @@ http://localhost:3000
   ![Screenshot 2025-05-06 021207](https://github.com/user-attachments/assets/44e520cc-0a82-4e9b-b8bb-8d5e3476676e)
 
 - TopoSort Iteration on a directed, unweighted graph (also supports weighted graphs): Enable Directed (and Weighted if desired) and click TopoSort. The algorithm will display shortest distances as it finalizes each node (does not account for starting node).
+  <img width="1470" alt="Screenshot 2025-05-07 at 6 51 56 PM" src="https://github.com/user-attachments/assets/4860853a-3fd8-4123-957c-34de99099d2a" />
