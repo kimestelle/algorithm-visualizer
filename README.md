@@ -1,6 +1,6 @@
 # Graph Algorithm Visualizer
 
-Deployed on website: [algorithm-visualizer-aeq4-qpf1agqa1-kimestelles-projects.vercel.app/(https://algorithm-visualizer-aeq4-qpf1agqa1-kimestelles-projects.vercel.app/))
+Deployed on website: [algorithm-visualizer-aeq4-qpf1agqa1-kimestelles-projects.vercel.app](https://algorithm-visualizer-aeq4-qpf1agqa1-kimestelles-projects.vercel.app/))
 
 
 ## Project Overview
