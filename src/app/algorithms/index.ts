@@ -1,6 +1,7 @@
 import { runDFS } from "./dfs";
 import { runBFS } from "./bfs";
 import { runDijkstra } from "./dijkstra"; 
+import { runToposort } from "./toposort";
 import { GraphData, TraversalResult } from "../types";
 
 // Algorithm Registry:
@@ -28,5 +29,9 @@ export const algorithmMap: Record<string, AlgorithmEntry> = {
   dijkstra: {
     run: runDijkstra,
     description: "Dijkstra's algorithm finds the shortest paths from a starting node to all other nodes in a weighted graph with non-negative weights. It uses a priority queue to always process the node with the smallest tentative distance.",
-  }
+  },
+  toposort: {
+    run: runToposort,
+    description: "Topological Sort orders the nodes of a directed acyclic graph (DAG) so that every edge is directed from an earlier node to a later node within the ordering. It can be performed using Kahn's algorithm or depth-first search.",
+  },
 };

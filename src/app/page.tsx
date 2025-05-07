@@ -132,7 +132,11 @@ export default function Home() {
         userFriendlyMessage = `Dijkstra's algorithm does not support negative edge weights. Please ensure all edge weights are non-negative.`;
       } else if (message.includes("Invalid or missing start node")) {
         userFriendlyMessage = "Please select a valid starting node from the Algorithm Setup panel.";
-      }
+      } else if (message.includes("requires a directed graph")) {
+        userFriendlyMessage = `Topological Sort requires a directed graph. Please enable the "Directed" option in the Graph Setup panel.`;
+      } else if (message.includes("cycle")) {
+        userFriendlyMessage = `Topological Sort cannot run on graphs with cycles. Please remove cycles or choose a different algorithm.`;
+      }      
 
       setErrorMessage(userFriendlyMessage);
       setIsRunningAlgorithm(false);
@@ -269,7 +273,7 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          {['dfs', 'bfs', 'dijkstra'].map(algo => (
+          {['dfs', 'bfs', 'dijkstra', 'toposort'].map(algo => (
             <button key={algo} onClick={() => runAlgorithm(algo as keyof typeof algorithmMap)} className={`${selectedAlgo === algo ? 'bg-purple-300 dark:bg-purple-600' : 'bg-purple-500 dark:bg-purple-700'} text-white px-2 py-1 rounded-md text-xs font-medium transition`}>
               {algo.toUpperCase()}
             </button>

@@ -5,7 +5,7 @@ Deployed on website: [algo-visualizer-olive-rho.vercel.app](https://algo-visuali
 
 ## Project Overview
 
-Graph Algorithm Visualizer is a browser-based interactive tool that enables users to construct graphs and visualize classical traversal algorithms. Users can toggle between directed/undirected and weighted/unweighted modes and add/delete nodes and edges dynamically. The application supports step-by-step visualization for Depth-First Search (DFS), Breadth-First Search (BFS), and Dijkstra’s algorithm, providing logs and annotated nodes to help understand traversal behavior. This tool is designed to enhance intuition around graph algorithms through visual interactivity.
+Graph Algorithm Visualizer is a browser-based interactive tool that enables users to construct graphs and visualize classical traversal algorithms. Users can toggle between directed/undirected and weighted/unweighted modes and add/delete nodes and edges dynamically. The application supports step-by-step visualization for Depth-First Search (DFS), Breadth-First Search (BFS), Dijkstra’s algorithm, and Topological Sort, providing logs and annotated nodes to help understand traversal behavior. This tool is designed to enhance intuition around graph algorithms through visual interactivity.
 
 ## Project Category
 
@@ -21,8 +21,8 @@ Bailey
 - Refactored DFS logic to align with what was taught in class
 
 Estelle  
-- Set up the initial UI/UX layout and component structure  
-- Implemented the initial version of the DFS algorithm  
+- Set up the initial UI/UX layout and prop / graph structure  
+- Implemented the initial version of the DFS algorithm and Topological Sort
 - Built the algorithm selection and setup panel
 
 ## How to Run
@@ -49,7 +49,7 @@ http://localhost:3000
 
 - Add and delete nodes and edges from the graph
 - Toggle between directed/undirected and weighted/unweighted graphs
-- Select and run DFS, BFS, or Dijkstra's algorithm
+- Select and run DFS, BFS, Dijkstra's algorithm, or TopoSort
 - Visualize traversal step-by-step with logs and annotations
 - Edit node labels and edge weights interactively
 
@@ -68,3 +68,5 @@ http://localhost:3000
 
 - Dijkstra Iteration on a directed, weighted graph (also supports weighted, undirected graphs): Enable Weighted (and Directed if desired), set your edge weights, pick a start node, and click Dijkstra. The algorithm will display shortest distances as it finalizes each node.
   ![Screenshot 2025-05-06 021207](https://github.com/user-attachments/assets/44e520cc-0a82-4e9b-b8bb-8d5e3476676e)
+
+- TopoSort Iteration on a directed, unweighted graph (also supports weighted graphs): Enable Directed (and Weighted if desired) and click TopoSort. The algorithm will display shortest distances as it finalizes each node (does not account for starting node).
