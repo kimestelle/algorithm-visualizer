@@ -414,9 +414,8 @@ export default function ForceGraph({
     // Color nodes based on highlight array
     svg.select("#nodes")
       .selectAll<SVGCircleElement, NodeType>("circle")
-      .transition()
-      .duration(300)
       .attr("fill", d => highlightedNodes.includes(d.id) ? "#4caf50" : "#ef5350");
+
     // Update labels with new annotations
     svg.select("#node-labels")
       .selectAll<SVGTextElement, NodeType>("text")
